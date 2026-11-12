@@ -11,7 +11,9 @@
     y = Math.max(-1, Math.min(1, ((e.beta ?? 45) - 45) / 30))
   }
   async function enableGyro() {
-    const D = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+    // DeviceOrientationEvent n'existe pas sur tous les navigateurs (ordinateurs, notamment)
+    const D = (globalThis as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
+    if (!D) return
     try {
       if (typeof D.requestPermission === 'function') { if ((await D.requestPermission()) !== 'granted') return }
       addEventListener('deviceorientation', onOrient)
@@ -19,8 +21,8 @@
   }
   function onMouse(e: MouseEvent) { x = (e.clientX / innerWidth - 0.5) * 2; y = (e.clientY / innerHeight - 0.5) * 2 }
   onMount(() => {
-    const D = DeviceOrientationEvent as unknown as { requestPermission?: unknown }
-    if (typeof D.requestPermission !== 'function') addEventListener('deviceorientation', onOrient)
+    const D = (globalThis as { DeviceOrientationEvent?: { requestPermission?: unknown } }).DeviceOrientationEvent
+    if (D && typeof D.requestPermission !== 'function') addEventListener('deviceorientation', onOrient)
     return () => removeEventListener('deviceorientation', onOrient)
   })
 </script>

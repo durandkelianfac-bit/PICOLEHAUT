@@ -32,7 +32,7 @@
 <main class="page stack">
   {#if !s}
     {#if session.status === 'connecting'}
-      <div class="card center"><div class="spin"></div><p>Connexion au salon…</p></div>
+      <div class="card center"><div class="spin"></div><p>Recherche du salon…</p><p class="muted" style="margin:0">{session.peers} appareil{session.peers > 1 ? 's' : ''} trouvé{session.peers > 1 ? 's' : ''} · cela peut prendre quelques secondes</p></div>
     {:else if session.status === 'error'}
       <div class="card stack"><p>{session.error}</p><button class="btn block" onclick={() => go('/rejoindre')}>Réessayer</button></div>
     {:else}
@@ -47,7 +47,7 @@
       <div class="code">{s.code}</div>
       {#if qr}<img class="qr" src={qr} alt="QR code pour rejoindre le salon {s.code}" width="200" height="200" />{/if}
       <div class="row" style="justify-content:center;flex-wrap:wrap">
-        <span class="chip">{s.mode === 'table' ? '📺 Écran table' : '📱 Téléphones égaux'}</span>
+        <span class="chip">{s.mode === 'table' ? '📺 Écran central' : '📱 Simple'}</span>
         <span class="chip">{session.status === 'online' ? '🟢 En ligne' : '🟠 Reconnexion…'}</span>
         <span class="chip">{s.sober ? '🥤 Sans alcool' : '🍺 Gorgées'}</span>
       </div>

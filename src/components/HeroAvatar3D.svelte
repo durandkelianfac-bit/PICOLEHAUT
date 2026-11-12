@@ -35,9 +35,10 @@
         }
         resize()
         addEventListener('resize', resize)
-        const clock = new THREE.Clock()
+        const timer = new THREE.Timer()
         const loop = () => {
-          if (!reduce) mixer.update(clock.getDelta())
+          timer.update()
+          if (!reduce) mixer.update(timer.getDelta())
           else mixer.setTime(0.5)
           model.rotation.y += (px * 0.55 - model.rotation.y) * 0.08
           model.rotation.x += (py * 0.12 - model.rotation.x) * 0.08

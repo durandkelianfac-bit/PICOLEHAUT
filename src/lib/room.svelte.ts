@@ -6,6 +6,7 @@ import { pushHistory, type SipEvent } from './sips'
 import { modules } from '../games/registry'
 import { assignDistinct, assignLook } from './looks'
 import { clearAudio, putAudio, registerAudioSender } from './audio.svelte'
+import { tabId } from './identity'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
 export interface Profile { id: string; name: string; color: string; avatar: string }
@@ -49,14 +50,18 @@ export function myProfile(): Profile {
   const p = load<Profile | null>('picole.profile', null)
   if (p) {
     if (!p.avatar) { p.avatar = assignLook(p.id); save('picole.profile', p) }
-    return p
+    return { ...p, id: tabId() ?? p.id }
   }
-  const fresh: Profile = { id: newId(), name: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], avatar: '' }
+  const fresh: Profile = { id: tabId() ?? newId(), name: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], avatar: '' }
   fresh.avatar = assignLook(fresh.id)
   save('picole.profile', fresh)
   return fresh
 }
-export function saveProfile(p: Profile) { save('picole.profile', p) }
+/** Sauvegarde le profil ; l'identifiant sauvegardé (celui de l'onglet principal) n'est jamais écrasé. */
+export function saveProfile(p: Profile) {
+  const stored = load<Profile | null>('picole.profile', null)
+  save('picole.profile', { ...p, id: stored?.id ?? p.id })
+}
 
 export const session = $state<{
   state: RoomState | null
@@ -68,7 +73,8 @@ export const session = $state<{
   priv: any
   pointers: Record<string, Pointer>
   toast: string
-}>({ state: null, status: 'idle', error: '', isHost: false, me: null, role: 'player', priv: null, pointers: {}, toast: '' })
+  peers: number
+}>({ state: null, status: 'idle', error: '', isHost: false, me: null, role: 'player', priv: null, pointers: {}, toast: '', peers: 0 })
 
 /** Abonnés aux clics laser (l'écran table les convertit en actions de jeu). */
 const clickListeners = new Set<(m: PointerMsg) => void>()
@@ -87,7 +93,7 @@ let secret: unknown = null // hôte : état secret du jeu en cours
 function commit(next: RoomState) {
   session.state = next
   save('picole.room.' + next.code, next)
-  sendState?.(next)
+  sendState?.($state.snapshot(next) as RoomState)
 }
 
 function applyIntent(i: Intent, peerId: string) {
@@ -157,10 +163,15 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
   session.status = 'connecting'
   session.error = ''
   try {
-    room = joinRoom({ appId: APP_ID }, code)
+    // identity 'none' : pas d'identité Trystero persistante (nos joueurs ont leur propre identifiant)
+    room = joinRoom({ appId: APP_ID, identity: 'none' }, code)
   } catch (e) {
     session.status = 'error'; session.error = String(e); return
   }
+  const countPeers = () => { session.peers = Object.keys(room?.getPeers() ?? {}).length }
+  room.onPeerJoin(countPeers)
+  room.onPeerLeave(countPeers)
+  session.peers = 0
   const stateAction = room.makeAction<RoomState>('state')
   const intentAction = room.makeAction<Intent>('intent')
   sendState = (s) => stateAction.send(s)
@@ -191,7 +202,7 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
     session.state = initial
     session.status = 'online'
     onLocalPacksChange((p) => session.state && commit({ ...session.state, packs: p }))
-    room.onPeerJoin(() => { if (session.state) stateAction.send(session.state) })
+    room.onPeerJoin(() => { if (session.state) stateAction.send($state.snapshot(session.state) as RoomState) })
     intentAction.onMessage((i, ctx) => applyIntent(i, ctx.peerId))
     room.onPeerLeave(({ peerId }) => {
       const pid = peerToPlayer.get(peerId)
@@ -216,7 +227,13 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
     room.onPeerLeave(({ peerId }) => {
       if (peerId === hostPeerId) { session.status = 'connecting' }
     })
-    setTimeout(() => { if (!session.state) { session.status = 'error'; session.error = 'Salon introuvable ou hôte hors ligne.' } }, 15000)
+    setTimeout(() => {
+      if (session.state) return
+      session.status = 'error'
+      session.error = session.peers === 0
+        ? 'Aucun appareil trouvé : vérifie le code, que l’hôte a bien ouvert son salon, et que vous êtes sur des navigateurs différents (ou un onglet privé).'
+        : 'Appareil trouvé mais le salon ne répond pas : demande à l’hôte de rouvrir son salon.'
+    }, 20000)
   }
 }
 
@@ -249,7 +266,8 @@ export function joinExisting(code: string, profile: Profile, asTable = false) {
 export function startGame(gameId: string) { applyIntent({ t: 'start', gameId }, 'self') }
 export function stopGame() { applyIntent({ t: 'stop' }, 'self') }
 /** Action de jeu : l'hôte l'applique directement, les autres l'envoient à l'hôte. */
-export function gameAction(action: unknown, as?: string) {
+export function gameAction(rawAction: unknown, as?: string) {
+  const action = $state.snapshot(rawAction) // pas de proxy réactif dans les messages réseau
   if (session.isHost) applyIntent({ t: 'game', action, as }, 'self')
   else if (hostPeerId) sendIntent?.({ t: 'game', action, as }, hostPeerId)
 }

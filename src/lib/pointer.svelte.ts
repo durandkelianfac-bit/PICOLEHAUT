@@ -33,11 +33,11 @@ function onOrient(e: DeviceOrientationEvent) {
 export async function enableLaser(playerId: string) {
   myId = playerId
   laser.denied = false
-  const D = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+  const D = (globalThis as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
+  if (!D) { laser.supported = false; return }
   try {
     if (typeof D.requestPermission === 'function' && (await D.requestPermission()) !== 'granted') { laser.denied = true; return }
   } catch { laser.denied = true; return }
-  if (!('DeviceOrientationEvent' in window)) { laser.supported = false; return }
   addEventListener('deviceorientation', onOrient)
   laser.active = true
   recenter()

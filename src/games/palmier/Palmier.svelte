@@ -43,7 +43,7 @@
     <section class="card stack">
       {#if session.isHost && !isTable}
         <label class="row sw"><input type="checkbox" checked={g.tower} disabled={!tableMode} onchange={(e) => gameAction({ type: 'opt', tower: e.currentTarget.checked })} />
-          Mini-jeu de la tour (gyroscope){!tableMode ? ' — demande le mode « écran table »' : ''}</label>
+          Mini-jeu de la tour (gyroscope){!tableMode ? ' — demande le mode « Écran central »' : ''}</label>
         <button class="btn primary block" onclick={() => gameAction({ type: 'begin' })}>Commencer ({s.players.length} joueurs)</button>
       {:else}<p class="muted">L’hôte lance la partie.</p>{/if}
     </section>

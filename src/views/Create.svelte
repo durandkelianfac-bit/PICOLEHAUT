@@ -17,10 +17,10 @@
   <div class="card stack">
     <h3>Mode</h3>
     <div class="seg" role="radiogroup">
-      <button class:on={mode === 'equal'} onclick={() => (mode = 'equal')} role="radio" aria-checked={mode === 'equal'}>Téléphones égaux</button>
-      <button class:on={mode === 'table'} onclick={() => (mode = 'table')} role="radio" aria-checked={mode === 'table'}>Écran « table »</button>
+      <button class:on={mode === 'equal'} onclick={() => (mode = 'equal')} role="radio" aria-checked={mode === 'equal'}>Simple</button>
+      <button class:on={mode === 'table'} onclick={() => (mode = 'table')} role="radio" aria-checked={mode === 'table'}>Écran central</button>
     </div>
-    <label class="row switch"><input type="checkbox" bind:checked={sober} /><span>Sans alcool (points à la place des gorgées)</span></label>
+    <label class="row switch"><input type="checkbox" bind:checked={sober} /><span>Sans alcool, la fête est moins folle</span></label>
   </div>
   <button class="btn primary block" disabled={!profile.name.trim()} onclick={submit}>Ouvrir le salon</button>
 </main>
