@@ -1,6 +1,7 @@
 <script lang="ts">
   import QRCode from 'qrcode'
   import Hues from '../games/hues/Hues.svelte'
+  import Codenames from '../games/codenames/Codenames.svelte'
   import Avatar from '../components/Avatar.svelte'
   import { session } from '../lib/room.svelte'
   const s = $derived(session.state)
@@ -13,6 +14,8 @@
     <p class="muted">Connexion au salon…</p>
   {:else if s.game?.id === 'hues'}
     <Hues view="table" />
+  {:else if s.game?.id === 'codenames'}
+    <Codenames view="table" />
   {:else}
     <div class="lobby">
       <div class="stack"><span class="muted">Rejoins le salon</span><div class="code">{s.code}</div>{#if qr}<img src={qr} alt="QR code du salon" width="220" height="220" />{/if}</div>

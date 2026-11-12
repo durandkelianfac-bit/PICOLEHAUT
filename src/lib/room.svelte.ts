@@ -85,6 +85,7 @@ function applyIntent(i: Intent, peerId: string) {
     peerToPlayer.set(peerId, i.profile.id)
     const others = s.players.filter((p) => p.id !== i.profile.id)
     commit({ ...s, players: [...others, { ...i.profile, connected: true }] })
+    if (s.game) deliverPriv({ [i.profile.id]: modules[s.game.id]?.privFor?.(s.game.data, secret, i.profile.id) ?? undefined })
   } else if (i.t === 'packs') {
     replacePacks(i.packs)
     commit({ ...s, packs: i.packs })
@@ -95,7 +96,7 @@ function applyIntent(i: Intent, peerId: string) {
   } else if (i.t === 'start' && fromHost) {
     const mod = modules[i.gameId]
     if (!mod || s.players.filter((p) => p.connected).length < mod.min) { toast(`Il faut au moins ${mod?.min ?? '?'} joueurs.`); return }
-    const r = mod.init({ players: s.players.filter((p) => p.connected), sober: s.sober })
+    const r = mod.init({ players: s.players.filter((p) => p.connected), sober: s.sober, hostId: s.hostId, packs: s.packs })
     secret = r.secret
     commit({ ...s, game: { id: i.gameId, data: r.pub } })
     deliverPriv(r.priv)
@@ -107,7 +108,7 @@ function applyIntent(i: Intent, peerId: string) {
     // un écran table peut agir au nom d'un joueur ; sinon l'identité vient de la connexion
     const pid = tablePeers.has(peerId) && i.as ? i.as : peerId === 'self' ? session.me!.id : peerToPlayer.get(peerId)
     if (!mod || !pid) return
-    const r = mod.reduce(s.game.data, secret, i.action, pid, { players: s.players, sober: s.sober })
+    const r = mod.reduce(s.game.data, secret, i.action, pid, { players: s.players, sober: s.sober, hostId: s.hostId, packs: s.packs })
     if ('error' in r) { deliverPriv({ [pid]: { error: r.error } }); return }
     secret = r.secret
     let history = s.history
@@ -123,6 +124,7 @@ function toast(msg: string) { session.toast = msg; setTimeout(() => { if (sessio
 function deliverPriv(priv?: Record<string, unknown>) {
   if (!priv) return
   for (const [pid, data] of Object.entries(priv)) {
+    if (data == null) continue
     if (pid === session.me?.id) { session.priv = { ...(session.priv ?? {}), ...(data as object) }; if ((data as any).error) toast((data as any).error); continue }
     const peer = [...peerToPlayer.entries()].find(([, v]) => v === pid)?.[0]
     if (peer) sendPriv?.(data, peer)

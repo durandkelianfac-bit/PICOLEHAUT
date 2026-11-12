@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { hues, type HuesPub, type HuesSecret } from './module'
 
-const ctx = { players: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }], sober: false }
+const ctx = { players: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }], sober: false, hostId: 'a', packs: {} }
 const run = (pub: HuesPub, sec: HuesSecret, who: string, action: object) => {
   const r = hues.reduce(pub, sec, action, who, ctx)
   if ('error' in r) throw new Error(r.error)

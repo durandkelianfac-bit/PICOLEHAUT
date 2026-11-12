@@ -41,6 +41,12 @@ export const hues: GameModule<HuesPub, HuesSecret> = {
     return { pub, secret: { options, target: null }, priv: { [givers[0]]: { options } } }
   },
 
+  privFor(pub, secret, pid) {
+    if (pid !== pub.giverId) return undefined
+    if (pub.phase === 'pick') return { options: secret.options }
+    return secret.target ? { target: secret.target } : undefined
+  },
+
   reduce(pub, secret, a, pid, ctx) {
     const isGiver = pid === pub.giverId
     const taken = () => Object.values(pub.tokens).flat().filter(Boolean) as Cell[]

@@ -1,6 +1,7 @@
 // Gestionnaire de packs : catégories + éléments, par jeu.
 // Sauvegarde locale + export/import JSON. En salon, l'hôte fait autorité (voir room.svelte.ts).
 import { load, save } from './storage'
+import { codenamesWords } from '../config/words.codenames'
 
 export interface PackItem { id: string; text: string }
 export interface PackCategory { id: string; name: string; enabled: boolean; items: PackItem[] }
@@ -11,10 +12,19 @@ const uid = () => Math.random().toString(36).slice(2, 9)
 export const newItem = (text: string): PackItem => ({ id: uid(), text })
 export const newCategory = (name: string, items: string[] = []): PackCategory => ({ id: uid(), name, enabled: true, items: items.map(newItem) })
 
+/** Catégories Codenames par défaut, sans doublon d'un mot à l'autre. */
+function codenamesCategories(): PackCategory[] {
+  const seen = new Set<string>()
+  const norm = (w: string) => w.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return Object.entries(codenamesWords).map(([name, words]) =>
+    newCategory(name, words.filter((w) => { const k = norm(w); if (seen.has(k)) return false; seen.add(k); return true })),
+  )
+}
+
 // Packs par défaut : catégories prêtes, contenu rempli dans les phases de chaque jeu.
 export function defaultPacks(): Packs {
   return {
-    codenames: { gameId: 'codenames', name: 'Codenames — mots', categories: [newCategory('Général'), newCategory('Nourriture'), newCategory('Nature')] },
+    codenames: { gameId: 'codenames', name: 'Codenames — mots', categories: codenamesCategories() },
     cyclone: { gameId: 'cyclone', name: 'Cyclone — cartes', categories: [newCategory('Gage'), newCategory('Action'), newCategory('Vérité')] },
     guess: { gameId: 'guess', name: 'Guess the size — objets', categories: [newCategory('Animaux'), newCategory('Monuments'), newCategory('Objets')] },
     doublage: { gameId: 'doublage', name: 'Doublage — extraits', categories: [newCategory('Films'), newCategory('Séries')] },
@@ -22,7 +32,18 @@ export function defaultPacks(): Packs {
 }
 
 const KEY = 'picole.packs'
-export const packsStore = $state<{ packs: Packs }>({ packs: load<Packs>(KEY, defaultPacks()) })
+// Un pack encore vide (sauvegardé avant l'ajout du contenu) est remplacé par le pack par défaut.
+function initialPacks(): Packs {
+  const defaults = defaultPacks()
+  const saved = load<Packs | null>(KEY, null)
+  if (!saved) return defaults
+  for (const [id, d] of Object.entries(defaults)) {
+    const cur = saved[id]
+    if (!cur || cur.categories.every((c) => c.items.length === 0)) saved[id] = d
+  }
+  return saved
+}
+export const packsStore = $state<{ packs: Packs }>({ packs: initialPacks() })
 
 let emit: ((p: Packs) => void) | null = null
 /** La salle s'abonne pour diffuser/transmettre les changements. */
