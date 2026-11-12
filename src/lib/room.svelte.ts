@@ -38,13 +38,20 @@ export const COLORS = ['#F5CB5C', '#E8EDDF', '#CFDBD5', '#e5645a', '#6ec6a0', '#
 
 export const makeCode = () => Array.from({ length: 4 }, () => LETTERS[Math.floor(Math.random() * LETTERS.length)]).join('')
 
+/** Identifiant aléatoire ; randomUUID n'existe qu'en contexte sécurisé (HTTPS / localhost). */
+function newId(): string {
+  try { if (typeof crypto.randomUUID === 'function') return crypto.randomUUID() } catch { /* repli ci-dessous */ }
+  const b = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+}
+
 export function myProfile(): Profile {
   const p = load<Profile | null>('picole.profile', null)
   if (p) {
     if (!p.avatar) { p.avatar = assignLook(p.id); save('picole.profile', p) }
     return p
   }
-  const fresh: Profile = { id: crypto.randomUUID(), name: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], avatar: '' }
+  const fresh: Profile = { id: newId(), name: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], avatar: '' }
   fresh.avatar = assignLook(fresh.id)
   save('picole.profile', fresh)
   return fresh
