@@ -9,7 +9,7 @@ export interface GameMeta {
   usesPack: boolean
 }
 export const games: GameMeta[] = [
-  { id: 'hues', name: 'Hues and Cues', tagline: 'Devine la couleur', players: '3-10', duration: '30 min', emoji: '🎨', ready: false, usesPack: false },
+  { id: 'hues', name: 'Hues and Cues', tagline: 'Devine la couleur', players: '3-10', duration: '30 min', emoji: '🎨', ready: true, usesPack: false },
   { id: 'codenames', name: 'Codenames', tagline: 'Deux équipes, un assassin', players: '4-8+', duration: '15 min', emoji: '🕵️', ready: false, usesPack: true },
   { id: 'pyramide', name: 'Pyramide', tagline: 'Bluff et mémoire', players: '3-10', duration: '20-40 min', emoji: '🔺', ready: false, usesPack: false },
   { id: 'palmier', name: 'Palmier', tagline: 'La tour qui tombe', players: '3-10', duration: '20 min', emoji: '🌴', ready: false, usesPack: false },

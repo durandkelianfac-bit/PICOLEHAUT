@@ -1,7 +1,7 @@
 <script lang="ts">
   import QRCode from 'qrcode'
   import Avatar from '../components/Avatar.svelte'
-  import { session, leaveRoom, reportSips, setSober, resumeRoom } from '../lib/room.svelte'
+  import { session, leaveRoom, reportSips, setSober, resumeRoom, startGame } from '../lib/room.svelte'
   import { drink, give, formatEvent, totals } from '../lib/sips'
   import { sipsConfig } from '../config/sips.config'
   import { games } from '../config/games'
@@ -69,7 +69,11 @@
 
     <section class="card stack">
       <h3>Jeux</h3>
-      <div class="gl">{#each games as g}<span class="chip">{g.emoji} {g.name} · bientôt</span>{/each}</div>
+      <div class="gl">{#each games as g}
+        {#if g.ready && session.isHost}<button class="btn primary" onclick={() => { startGame(g.id); go('/jeu') }}>{g.emoji} Lancer {g.name}</button>
+        {:else}<span class="chip">{g.emoji} {g.name}{g.ready ? '' : ' · bientôt'}</span>{/if}
+      {/each}</div>
+      {#if session.toast}<span class="muted" role="alert">{session.toast}</span>{/if}
       <button class="btn block" onclick={demo}>Tester le moteur de gorgées</button>
     </section>
 

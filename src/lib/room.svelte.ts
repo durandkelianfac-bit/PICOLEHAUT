@@ -3,6 +3,7 @@
 import { joinRoom } from 'trystero'
 import { load, save } from './storage'
 import { pushHistory, type SipEvent } from './sips'
+import { modules } from '../games/registry'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
 export interface Profile { id: string; name: string; color: string; avatar: string }
@@ -16,11 +17,18 @@ export interface RoomState {
   players: Player[]
   history: SipEvent[]
   packs: Packs
+  game: { id: string; data: any } | null
 }
 type Intent =
   | { t: 'join'; profile: Profile }
   | { t: 'packs'; packs: Packs }
   | { t: 'sip'; event: SipEvent }
+  | { t: 'join-table' }
+  | { t: 'start'; gameId: string }
+  | { t: 'stop' }
+  | { t: 'game'; action: any; as?: string }
+export interface Pointer { x: number; y: number; color: string; name: string; ts: number }
+export interface PointerMsg { id: string; x: number; y: number; click?: boolean }
 
 const APP_ID = 'picole-haut-app-v1'
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -43,13 +51,25 @@ export const session = $state<{
   error: string
   isHost: boolean
   me: Profile | null
-}>({ state: null, status: 'idle', error: '', isHost: false, me: null })
+  role: 'player' | 'table'
+  priv: any
+  pointers: Record<string, Pointer>
+  toast: string
+}>({ state: null, status: 'idle', error: '', isHost: false, me: null, role: 'player', priv: null, pointers: {}, toast: '' })
+
+/** Abonnés aux clics laser (l'écran table les convertit en actions de jeu). */
+const clickListeners = new Set<(m: PointerMsg) => void>()
+export function onLaserClick(fn: (m: PointerMsg) => void) { clickListeners.add(fn); return () => clickListeners.delete(fn) }
 
 let room: ReturnType<typeof joinRoom> | null = null
 let sendState: ((s: RoomState) => Promise<void>) | null = null
 let sendIntent: ((i: Intent, hostPeer?: string) => Promise<void>) | null = null
 const peerToPlayer = new Map<string, string>() // peerId -> player.id (hôte uniquement)
 let hostPeerId: string | null = null
+let sendPriv: ((d: unknown, target: string) => Promise<void>) | null = null
+let sendPointer: ((m: PointerMsg) => Promise<void>) | null = null
+const tablePeers = new Set<string>() // hôte : appareils « écran table »
+let secret: unknown = null // hôte : état secret du jeu en cours
 
 function commit(next: RoomState) {
   session.state = next
@@ -60,6 +80,7 @@ function commit(next: RoomState) {
 function applyIntent(i: Intent, peerId: string) {
   const s = session.state
   if (!s) return
+  const fromHost = peerId === 'self' || s.hostId === peerToPlayer.get(peerId)
   if (i.t === 'join') {
     peerToPlayer.set(peerId, i.profile.id)
     const others = s.players.filter((p) => p.id !== i.profile.id)
@@ -69,13 +90,52 @@ function applyIntent(i: Intent, peerId: string) {
     commit({ ...s, packs: i.packs })
   } else if (i.t === 'sip') {
     commit({ ...s, history: pushHistory(s.history, i.event) })
+  } else if (i.t === 'join-table') {
+    tablePeers.add(peerId)
+  } else if (i.t === 'start' && fromHost) {
+    const mod = modules[i.gameId]
+    if (!mod || s.players.filter((p) => p.connected).length < mod.min) { toast(`Il faut au moins ${mod?.min ?? '?'} joueurs.`); return }
+    const r = mod.init({ players: s.players.filter((p) => p.connected), sober: s.sober })
+    secret = r.secret
+    commit({ ...s, game: { id: i.gameId, data: r.pub } })
+    deliverPriv(r.priv)
+  } else if (i.t === 'stop' && fromHost) {
+    secret = null
+    commit({ ...s, game: null })
+  } else if (i.t === 'game' && s.game) {
+    const mod = modules[s.game.id]
+    // un écran table peut agir au nom d'un joueur ; sinon l'identité vient de la connexion
+    const pid = tablePeers.has(peerId) && i.as ? i.as : peerId === 'self' ? session.me!.id : peerToPlayer.get(peerId)
+    if (!mod || !pid) return
+    const r = mod.reduce(s.game.data, secret, i.action, pid, { players: s.players, sober: s.sober })
+    if ('error' in r) { deliverPriv({ [pid]: { error: r.error } }); return }
+    secret = r.secret
+    let history = s.history
+    for (const e of r.sips ?? []) history = pushHistory(history, e)
+    commit({ ...s, history, game: { id: s.game.id, data: r.pub } })
+    deliverPriv(r.priv)
   }
 }
 
-function connect(code: string, host: boolean, initial?: RoomState) {
+function toast(msg: string) { session.toast = msg; setTimeout(() => { if (session.toast === msg) session.toast = '' }, 3000) }
+
+/** Envoie des données privées à des joueurs (l'hôte les garde pour lui-même). */
+function deliverPriv(priv?: Record<string, unknown>) {
+  if (!priv) return
+  for (const [pid, data] of Object.entries(priv)) {
+    if (pid === session.me?.id) { session.priv = { ...(session.priv ?? {}), ...(data as object) }; if ((data as any).error) toast((data as any).error); continue }
+    const peer = [...peerToPlayer.entries()].find(([, v]) => v === pid)?.[0]
+    if (peer) sendPriv?.(data, peer)
+  }
+}
+
+function connect(code: string, host: boolean, initial?: RoomState, asTable = false) {
   const me = myProfile()
   session.me = me
   session.isHost = host
+  session.role = asTable ? 'table' : 'player'
+  session.priv = null
+  session.pointers = {}
   session.status = 'connecting'
   session.error = ''
   try {
@@ -87,6 +147,20 @@ function connect(code: string, host: boolean, initial?: RoomState) {
   const intentAction = room.makeAction<Intent>('intent')
   sendState = (s) => stateAction.send(s)
   sendIntent = (i, target) => intentAction.send(i, target ? { target } : undefined)
+  const privAction = room.makeAction<any>('priv')
+  const pointerAction = room.makeAction<PointerMsg>('pointer')
+  sendPriv = (d, target) => privAction.send(d, { target })
+  sendPointer = (m) => pointerAction.send(m)
+  privAction.onMessage((d) => {
+    session.priv = { ...(session.priv ?? {}), ...d }
+    if (d?.error) toast(d.error)
+  })
+  pointerAction.onMessage((m) => {
+    const st = session.state
+    const pl = st?.players.find((p) => p.id === m.id)
+    if (pl) session.pointers[m.id] = { x: m.x, y: m.y, color: pl.color, name: pl.name, ts: Date.now() }
+    if (m.click) clickListeners.forEach((fn) => fn(m))
+  })
 
   if (host && initial) {
     session.state = initial
@@ -110,7 +184,9 @@ function connect(code: string, host: boolean, initial?: RoomState) {
       session.status = 'online'
       replacePacks(s.packs)
       // (re)connexion : se présenter à l'hôte, aussi après une coupure
-      if (first || !s.players.some((p) => p.id === me.id && p.connected)) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
+      if (!s.game) session.priv = null
+      if (asTable) { if (first) sendIntent?.({ t: 'join-table' }, ctx.peerId) }
+      else if (first || !s.players.some((p) => p.id === me.id && p.connected)) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
     })
     room.onPeerLeave(({ peerId }) => {
       if (peerId === hostPeerId) { session.status = 'connecting' }
@@ -124,7 +200,7 @@ export function createRoom(profile: Profile, mode: RoomMode, sober: boolean) {
   const code = makeCode()
   const initial: RoomState = {
     code, hostId: profile.id, mode, sober,
-    players: [{ ...profile, connected: true }], history: [],
+    players: [{ ...profile, connected: true }], history: [], game: null,
     packs: $state.snapshot(packsStore.packs) as Packs,
   }
   save('picole.lastHost', code)
@@ -140,10 +216,19 @@ export function resumeRoom(code: string): boolean {
   return true
 }
 
-export function joinExisting(code: string, profile: Profile) {
-  saveProfile(profile)
-  connect(code.toUpperCase(), false)
+export function joinExisting(code: string, profile: Profile, asTable = false) {
+  if (!asTable) saveProfile(profile)
+  connect(code.toUpperCase(), false, undefined, asTable)
 }
+
+export function startGame(gameId: string) { applyIntent({ t: 'start', gameId }, 'self') }
+export function stopGame() { applyIntent({ t: 'stop' }, 'self') }
+/** Action de jeu : l'hôte l'applique directement, les autres l'envoient à l'hôte. */
+export function gameAction(action: unknown, as?: string) {
+  if (session.isHost) applyIntent({ t: 'game', action, as }, 'self')
+  else if (hostPeerId) sendIntent?.({ t: 'game', action, as }, hostPeerId)
+}
+export function sendLaser(m: PointerMsg) { sendPointer?.(m) }
 
 export function reportSips(event: SipEvent) {
   if (session.isHost) applyIntent({ t: 'sip', event }, 'self')
@@ -159,5 +244,6 @@ export async function leaveRoom() {
   await room?.leave()
   room = null; sendState = null; sendIntent = null; hostPeerId = null
   peerToPlayer.clear()
-  session.state = null; session.status = 'idle'; session.isHost = false
+  session.state = null; session.status = 'idle'; session.isHost = false; session.priv = null; session.pointers = {}
+  tablePeers.clear(); secret = null
 }
