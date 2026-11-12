@@ -5,6 +5,7 @@
   import Pyramide from '../games/pyramide/Pyramide.svelte'
   import Palmier from '../games/palmier/Palmier.svelte'
   import Guess from '../games/guess/Guess.svelte'
+  import Cyclone from '../games/cyclone/Cyclone.svelte'
   import Avatar from '../components/Avatar.svelte'
   import { session } from '../lib/room.svelte'
   const s = $derived(session.state)
@@ -25,6 +26,8 @@
     <Palmier view="table" />
   {:else if s.game?.id === 'guess'}
     <Guess view="table" />
+  {:else if s.game?.id === 'cyclone'}
+    <Cyclone view="table" />
   {:else}
     <div class="lobby">
       <div class="stack"><span class="muted">Rejoins le salon</span><div class="code">{s.code}</div>{#if qr}<img src={qr} alt="QR code du salon" width="220" height="220" />{/if}</div>

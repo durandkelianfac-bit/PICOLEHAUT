@@ -3,6 +3,7 @@
 import { load, save } from './storage'
 import { codenamesWords } from '../config/words.codenames'
 import { guessItems } from '../config/sizes.guess'
+import { cycloneCards } from '../config/cards.cyclone'
 
 export interface PackItem { id: string; text: string }
 export interface PackCategory { id: string; name: string; enabled: boolean; items: PackItem[] }
@@ -26,7 +27,7 @@ function codenamesCategories(): PackCategory[] {
 export function defaultPacks(): Packs {
   return {
     codenames: { gameId: 'codenames', name: 'Codenames — mots', categories: codenamesCategories() },
-    cyclone: { gameId: 'cyclone', name: 'Cyclone — cartes', categories: [newCategory('Gage'), newCategory('Action'), newCategory('Vérité')] },
+    cyclone: { gameId: 'cyclone', name: 'Cyclone — cartes', categories: Object.entries(cycloneCards).map(([name, lines]) => newCategory(name, lines)) },
     guess: { gameId: 'guess', name: 'Guess the size — objets', categories: Object.entries(guessItems).map(([name, lines]) => newCategory(name, lines)) },
     doublage: { gameId: 'doublage', name: 'Doublage — extraits', categories: [newCategory('Films'), newCategory('Séries')] },
   }

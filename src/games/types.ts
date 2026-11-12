@@ -5,7 +5,7 @@ export interface GameCtx {
   players: GamePlayer[]
   sober: boolean
   hostId: string
-  packs: Record<string, { categories: { enabled: boolean; items: { text: string }[] }[] }>
+  packs: Record<string, { categories: { name?: string; enabled: boolean; items: { text: string }[] }[] }>
 }
 export interface ReduceResult<P = unknown, S = unknown> {
   pub: P // état public, diffusé à tous
