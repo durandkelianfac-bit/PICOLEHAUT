@@ -5,7 +5,8 @@ export const sipsConfig = {
   // remainingOf : 'loser' = mots restants à l'équipe perdante ; 'winner' = à l'équipe gagnante. À confirmer.
   codenames: { assassinSips: 10, perRemainingWord: 1, remainingOf: 'loser' as 'loser' | 'winner' },
   pyramide: { perFloor: [1, 2, 3, 4, 5], topIsCulSec: false, accusationMultiplier: 2, consultationCost: 2, rougeNoir: [1, 2, 3, 4] },
-  palmier: { towerCollapseSips: 7, queenAll: true, tenMinorityPerPerson: 5 },
+  // lowPerValue : 2 à 6 = valeur × ce facteur. queenSips et culSec : valeurs proposées, à confirmer.
+  palmier: { towerCollapseSips: 7, lowPerValue: 1, queenSips: 1, culSec: 10, tenMinorityPerPerson: 5 },
   doublage: { funniestGives: 5 },
   guessTheSize: {},
   cyclone: {},
