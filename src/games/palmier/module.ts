@@ -103,7 +103,7 @@ export const palmier: GameModule<PalPub, PalSecret> = {
             break
           }
           case 'ace-red': p = { ...p, need: 'target' }; break
-          case 'ace-black': sips.push(drink(cur, cfg.culSec, 'palmier', 'As noir : cul sec')); p = after(p); break
+          case 'ace-black': sips.push(drink(cur, cfg.culSec, 'palmier', 'As noir : cul sec', undefined, 'culsec')); p = after(p); break
         }
         return out(p, s)
       }
@@ -119,7 +119,7 @@ export const palmier: GameModule<PalPub, PalSecret> = {
       case 'target': {
         if (pub.phase !== 'play' || pub.need !== 'target' || pid !== cur) return err('Action impossible.')
         if (!pub.order.includes(a.id) || a.id === pid) return err('Choisis quelqu’un d’autre.')
-        sips.push(give(pid, cfg.culSec, 'palmier', 'As rouge'), drink(a.id, cfg.culSec, 'palmier', 'Cul sec !', pid))
+        sips.push(give(pid, cfg.culSec, 'palmier', 'As rouge'), drink(a.id, cfg.culSec, 'palmier', 'Cul sec !', pid, 'culsec'))
         return out(after(pub))
       }
       case 'rule': {
@@ -144,6 +144,16 @@ export const palmier: GameModule<PalPub, PalSecret> = {
         const text = String(a.text ?? '').trim().slice(0, 140)
         if (!text) return err('Écris ta règle.')
         return out({ ...pub, banner: `👑 ${name(pid)} (Roi) : ${text}` })
+      }
+      case 'decree': {
+        // le roi, pendant son règne, envoie autant de gorgées qu'il veut au joueur de son choix
+        if (pub.phase !== 'play') return err('Action impossible.')
+        if (pub.held.king !== pid) return err('Tu n’es pas le roi.')
+        const n = Number(a.n)
+        if (!Number.isInteger(n) || n < 1 || n > 1_000_000) return err('Nombre invalide.')
+        if (!pub.order.includes(a.to) || a.to === pid) return err('Choisis un autre joueur.')
+        sips.push(give(pid, n, 'palmier', 'Décret du roi'), drink(a.to, n, 'palmier', 'Cadeau du roi', pid, 'royal'))
+        return out({ ...pub, banner: `👑 ${name(pid)} offre ${n} à ${name(a.to)} !` })
       }
       case 'placed': {
         if (pub.phase !== 'play' || pub.step !== 'place' || (pid !== cur && !isHost)) return err('Action impossible.')

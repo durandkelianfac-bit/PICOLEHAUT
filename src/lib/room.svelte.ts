@@ -7,9 +7,10 @@ import { modules } from '../games/registry'
 import { assignDistinct, assignLook } from './looks'
 import { clearAudio, putAudio, registerAudioSender } from './audio.svelte'
 import { tabId } from './identity'
+import type { Gender } from './cheeky'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
-export interface Profile { id: string; name: string; color: string; avatar: string }
+export interface Profile { id: string; name: string; color: string; avatar: string; gender?: Gender }
 export interface Player extends Profile { connected: boolean }
 export type RoomMode = 'equal' | 'table'
 export interface RoomState {

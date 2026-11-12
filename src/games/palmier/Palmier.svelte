@@ -39,6 +39,8 @@
   let alloc = $state<Record<string, number>>({})
   let ruleText = $state('')
   let kingText = $state('')
+  let decreeTo = $state('')
+  let decreeN = $state(1)
   let maj = $state(0), min = $state(0)
   $effect(() => { g.turn; g.step; g.need; alloc = {}; ruleText = ''; maj = 0; min = 0 })
   const allocated = $derived(Object.values(alloc).reduce((a, b) => a + b, 0))
@@ -148,8 +150,20 @@
 
         {#if g.held.jack === me}<button class="btn block" onclick={() => act({ type: 'use', card: 'jack' })}>❄️ Jouer mon Valet (freeze)</button>{/if}
         {#if g.held.king === me}
-          <form class="row" onsubmit={(e) => { e.preventDefault(); act({ type: 'use', card: 'king', text: kingText }); kingText = '' }}>
-            <input class="input" bind:value={kingText} placeholder="Ma règle de Roi…" aria-label="Règle du roi" /><button class="btn" disabled={!kingText.trim()}>👑</button></form>
+          <section class="card stack king">
+            <h3>👑 Tu es le roi</h3>
+            <form class="row" onsubmit={(e) => { e.preventDefault(); act({ type: 'use', card: 'king', text: kingText }); kingText = '' }}>
+              <input class="input" bind:value={kingText} placeholder="Ma règle de Roi…" aria-label="Règle du roi" /><button class="btn" disabled={!kingText.trim()}>Décréter</button></form>
+            <strong>Offrir des {unit} (sans limite, quand tu veux)</strong>
+            <div class="row">
+              <select class="input" bind:value={decreeTo} aria-label="Joueur à gratifier">
+                <option value="" disabled>À qui ?</option>
+                {#each others as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+              </select>
+              <input class="input num" type="number" min="1" step="1" bind:value={decreeN} aria-label="Nombre de {unit}" />
+            </div>
+            <button class="btn primary block" disabled={!decreeTo || !(decreeN >= 1)} onclick={() => act({ type: 'decree', to: decreeTo, n: Math.floor(decreeN) })}>🎁 Envoyer le cadeau royal</button>
+          </section>
         {/if}
       {:else}
         {#if g.step === 'done' && session.isHost}<button class="btn primary" onclick={() => act({ type: 'next' })}>Joueur suivant</button>{/if}
@@ -181,6 +195,8 @@
   .pick:not(:disabled):hover, .pick:not(:disabled):focus-visible { transform: rotate(var(--r)) translateY(-18px); z-index: 2; }
   .pick:disabled { cursor: default; }
   .table .pick { margin-left: -50px; }
+  .king { border-top: 4px solid #b98cff; }
+  .num { max-width: 110px; text-align: center; }
   .tower { flex: 1; min-width: 320px; max-width: 520px; }
   .table .stage { align-items: flex-start; }
   .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 90px); background: var(--c-danger); color: #fff; padding: 10px 18px; border-radius: 99px; font-weight: 700; z-index: 60; }

@@ -2,11 +2,20 @@
   import Avatar from './Avatar.svelte'
   import { COLORS, type Profile } from '../lib/room.svelte'
   import { ACCESSORIES, LOOKS, composeAvatar, parseAvatar } from '../lib/looks'
+  import { GENDERS } from '../lib/cheeky'
   let { profile = $bindable() }: { profile: Profile } = $props()
   const cur = $derived(parseAvatar(profile.avatar))
 </script>
 <div class="stack">
-  <div class="row" style="justify-content:center"><Avatar name={profile.name} color={profile.color} look={profile.avatar} size={104} /></div>
+  <div class="hero">
+    <Avatar name={profile.name} color={profile.color} look={profile.avatar} size={104} />
+    <!-- Genre : sert à accorder les messages (Palmier pour l'instant). Genderfluid = tous les autres. -->
+    <div class="gender" role="radiogroup" aria-label="Genre (accord des messages au Palmier)" title="Sert à accorder les messages du Palmier">
+      {#each GENDERS as g}
+        <button class:sel={(profile.gender ?? 'x') === g.id} role="radio" aria-checked={(profile.gender ?? 'x') === g.id} onclick={() => (profile.gender = g.id)}>{g.label}</button>
+      {/each}
+    </div>
+  </div>
   <input class="input" placeholder="Ton pseudo" maxlength="16" bind:value={profile.name} aria-label="Pseudo" />
 
   <div class="colors" role="radiogroup" aria-label="Couleur">
@@ -39,6 +48,10 @@
   </div>
 </div>
 <style>
+  .hero { position: relative; display: flex; justify-content: center; padding: 6px 0; }
+  .gender { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+  .gender button { padding: 3px 9px; border-radius: 99px; font-size: .68rem; color: var(--c-soft); background: var(--c-bg); box-shadow: var(--shadow-in); opacity: .8; }
+  .gender button.sel { background: var(--c-accent); color: var(--c-on-accent); font-weight: 700; opacity: 1; }
   .colors { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .dot { width: 38px; height: 38px; border-radius: 50%; box-shadow: var(--shadow-out); border: 3px solid transparent; }
   .dot.sel { border-color: var(--c-text); transform: scale(1.12); }
