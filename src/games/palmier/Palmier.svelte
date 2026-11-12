@@ -68,7 +68,7 @@
         {/if}
       </section>
     {:else}
-      <header class="row turn"><Avatar name={curP?.name} color={curP?.color} size={isTable ? 56 : 44} />
+      <header class="row turn"><Avatar name={curP?.name} color={curP?.color} look={curP?.avatar} size={isTable ? 56 : 44} />
         <div><strong>{mine ? 'À toi de jouer !' : `Au tour de ${curP?.name}`}</strong><div class="muted">{g.deckLeft} cartes restantes</div></div></header>
 
       {#if g.banner}<div class="banner" aria-live="polite">{g.banner}</div>{/if}
@@ -91,7 +91,7 @@
 
         {#if g.need === 'give' && mine}
           <section class="card stack"><h3>Donne {total} {unit} ({total - allocated} restant{total - allocated > 1 ? 's' : ''})</h3>
-            {#each others as p (p.id)}<div class="row"><Avatar name={p.name} color={p.color} size={36} /><span style="flex:1">{p.name}</span>
+            {#each others as p (p.id)}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span>
               <button class="step" onclick={() => adj(p.id, -1)} aria-label="Moins pour {p.name}">−</button><b class="n">{alloc[p.id] ?? 0}</b><button class="step" onclick={() => adj(p.id, 1)} aria-label="Plus pour {p.name}">+</button></div>{/each}
             <button class="btn primary block" disabled={allocated !== total} onclick={() => act({ type: 'distribute', alloc: Object.fromEntries(Object.entries(alloc).filter(([, n]) => n > 0)) })}>Valider</button>
           </section>

@@ -4,7 +4,7 @@
   let { profile = $bindable() }: { profile: Profile } = $props()
 </script>
 <div class="stack">
-  <div class="row" style="justify-content:center"><Avatar name={profile.name} color={profile.color} size={84} /></div>
+  <div class="row" style="justify-content:center"><Avatar name={profile.name} color={profile.color} look={profile.avatar} size={84} /></div>
   <input class="input" placeholder="Ton pseudo" maxlength="16" bind:value={profile.name} aria-label="Pseudo" />
   <div class="colors" role="radiogroup" aria-label="Couleur">
     {#each COLORS as c}

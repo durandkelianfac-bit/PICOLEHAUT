@@ -137,7 +137,7 @@
       <section class="players">
         {#each s.players as p (p.id)}
           <div class="pl" class:me={p.id === me} class:turn={g.claim?.by === p.id || g.dist?.from === p.id}>
-            <Avatar name={p.name} color={p.color} size={isTable ? 44 : 34} />
+            <Avatar name={p.name} color={p.color} look={p.avatar} size={isTable ? 44 : 34} />
             <span>{p.name}</span>
             <span class="cards">{#each (g.shown[p.id] ?? []) as sh}<PlayingCard card={sh.card} w={22} />{/each}</span>
           </div>
@@ -167,7 +167,7 @@
         {#if g.dist.from === me && !isTable}
           <h3>Distribue {g.dist.total} {unit} ({g.dist.total - allocated} restant{g.dist.total - allocated > 1 ? 's' : ''})</h3>
           {#each targets as p (p.id)}
-            <div class="row"><Avatar name={p.name} color={p.color} size={36} /><span style="flex:1">{p.name}</span>
+            <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span>
               <button class="step" onclick={() => adj(p.id, -1)} aria-label="Moins pour {p.name}">−</button><b class="n">{alloc[p.id] ?? 0}</b><button class="step" onclick={() => adj(p.id, 1)} aria-label="Plus pour {p.name}">+</button></div>
           {/each}
           <button class="btn primary block" disabled={allocated !== g.dist.total} onclick={() => act({ type: 'distribute', alloc: Object.fromEntries(Object.entries(alloc).filter(([, n]) => n > 0)) })}>Valider</button>
@@ -180,7 +180,7 @@
     {#if g.phase === 'accuse' && g.accuse}
       <section class="card stack">
         <h3>{player(g.accuse.claimer)?.name} distribue</h3>
-        {#each Object.entries(g.accuse.alloc) as [id, n]}<div class="row"><Avatar name={player(id)?.name} color={player(id)?.color} size={30} /><span style="flex:1">{player(id)?.name}</span><span class="chip">{n} {unit}</span>{#if !g.accuse.pending.includes(id)}<span>✔</span>{/if}</div>{/each}
+        {#each Object.entries(g.accuse.alloc) as [id, n]}<div class="row"><Avatar name={player(id)?.name} color={player(id)?.color} look={player(id)?.avatar} size={30} /><span style="flex:1">{player(id)?.name}</span><span class="chip">{n} {unit}</span>{#if !g.accuse.pending.includes(id)}<span>✔</span>{/if}</div>{/each}
         {#if iAmTarget && !isTable}
           <button class="btn block" onclick={() => act({ type: 'respond', choice: 'accept' })}>J’accepte ({myAlloc})</button>
           <button class="btn primary block" onclick={() => act({ type: 'respond', choice: 'liar' })}>Menteur !</button>
@@ -215,7 +215,7 @@
       <section class="card stack">
         <h2>Fin de partie !</h2>
         {#each s.players as p}
-          <div class="row"><Avatar name={p.name} color={p.color} size={34} /><span style="min-width:70px">{p.name}</span><span class="cards">{#each (g.finalHands[p.id] ?? []) as c}<PlayingCard card={c} w={32} />{/each}</span></div>
+          <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="min-width:70px">{p.name}</span><span class="cards">{#each (g.finalHands[p.id] ?? []) as c}<PlayingCard card={c} w={32} />{/each}</span></div>
         {/each}
         {#if session.isHost && !isTable}
           <button class="btn primary block" onclick={() => gameAction({ type: 'again' })}>Rejouer</button>

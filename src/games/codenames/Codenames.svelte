@@ -56,7 +56,7 @@
         <section class="card stack {t}">
           <h3>Équipe {teamName(t as Team)}</h3>
           {#each members(t as Team) as p (p.id)}
-            <div class="row"><Avatar name={p.name} color={p.color} size={36} /><span style="flex:1">{p.name}</span>{#if g.spies[t as Team] === p.id}<span class="chip">🕵️ espion</span>{/if}</div>
+            <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span>{#if g.spies[t as Team] === p.id}<span class="chip">🕵️ espion</span>{/if}</div>
           {/each}
           {#if !isTable}
             {#if myTeam !== t}<button class="btn block" onclick={() => gameAction({ type: 'team', team: t })}>Rejoindre</button>

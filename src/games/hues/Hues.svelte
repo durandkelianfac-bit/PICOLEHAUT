@@ -68,7 +68,7 @@
 
 <div class="game" class:table={isTable}>
   <header class="top">
-    <div class="row"><Avatar name={giver?.name} color={giver?.color} size={40} />
+    <div class="row"><Avatar name={giver?.name} color={giver?.color} look={giver?.avatar} size={40} />
       <div><strong>{giver?.name}</strong> <span class="muted">donne les indices · manche {g.round + 1}/{g.givers.length}</span></div></div>
     {#if g.clues.length}<div class="clues">{#each g.clues as c, i}<span class="chip big">Indice {i + 1} : <b>{c}</b></span>{/each}</div>{/if}
     {#if phaseText}<div class="phase" aria-live="polite">{phaseText}</div>{/if}
@@ -134,7 +134,7 @@
       <section class="card stack">
         <h3>Résultat — couleur {label(g.target ?? undefined)}</h3>
         {#each sorted as p}
-          <div class="row"><Avatar name={p.name} color={p.color} size={34} /><span style="flex:1">{p.name}</span>
+          <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}</span>
             {#if (g.roundPts?.[p.id] ?? 0) > 0}<span class="chip">+{g.roundPts?.[p.id]}</span>{/if}<strong>{g.totals[p.id] ?? 0}</strong></div>
         {/each}
         <button class="btn primary block" onclick={() => gameAction({ type: 'next' })}>Manche suivante</button>
@@ -145,14 +145,14 @@
   {#if g.phase === 'score' && isTable}
     <section class="card stack score">
       <h3>Couleur {label(g.target ?? undefined)}</h3>
-      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} size={34} /><span style="flex:1">{p.name}</span>{#if (g.roundPts?.[p.id] ?? 0) > 0}<span class="chip">+{g.roundPts?.[p.id]}</span>{/if}<strong>{g.totals[p.id] ?? 0}</strong></div>{/each}
+      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}</span>{#if (g.roundPts?.[p.id] ?? 0) > 0}<span class="chip">+{g.roundPts?.[p.id]}</span>{/if}<strong>{g.totals[p.id] ?? 0}</strong></div>{/each}
     </section>
   {/if}
 
   {#if g.phase === 'end'}
     <section class="card stack end">
       <h2>🏆 {g.winners.map((id) => player(id)?.name).join(' & ')}</h2>
-      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} size={34} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} pts</strong></div>{/each}
+      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} pts</strong></div>{/each}
       {#if session.isHost}<button class="btn primary block" onclick={stopGame}>Terminer la partie</button>{/if}
     </section>
   {/if}

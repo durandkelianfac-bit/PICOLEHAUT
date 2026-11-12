@@ -43,7 +43,7 @@
       {/if}
     </section>
   {:else}
-    <header class="row turn"><Avatar name={curP?.name} color={curP?.color} size={isTable ? 56 : 44} />
+    <header class="row turn"><Avatar name={curP?.name} color={curP?.color} look={curP?.avatar} size={isTable ? 56 : 44} />
       <div><strong>{mine ? 'À toi !' : `Au tour de ${curP?.name}`}</strong><div class="muted">{g.left} cartes restantes</div></div></header>
 
     {#if g.card}

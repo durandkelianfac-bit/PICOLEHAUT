@@ -38,7 +38,7 @@
   {:else if g.phase === 'end'}
     <section class="card stack">
       <h2>🏆 {player(sorted[0]?.id)?.name}</h2>
-      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} size={36} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} / 500</strong></div>{/each}
+      {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} / 500</strong></div>{/each}
       {#if session.isHost && !isTable}
         <button class="btn primary block" onclick={() => gameAction({ type: 'again' })}>Rejouer</button>
         <button class="btn block" onclick={stopGame}>Terminer</button>
@@ -85,7 +85,7 @@
       <section class="card stack">
         {#each sorted as p}
           {@const r = g.result.guesses[p.id]}
-          <div class="row"><Avatar name={p.name} color={p.color} size={34} /><span style="flex:1">{p.name}{g.result.closest.includes(p.id) ? ' 🎯' : ''}{g.result.farthest.includes(p.id) ? ' 🍺' : ''}</span>
+          <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}{g.result.closest.includes(p.id) ? ' 🎯' : ''}{g.result.farthest.includes(p.id) ? ' 🍺' : ''}</span>
             <span class="muted">{r ? fmtSize(r.size) : '—'}</span>{#if r}<span class="chip">+{r.score}</span>{/if}<strong>{g.totals[p.id] ?? 0}</strong></div>
         {/each}
         {#if session.isHost && !isTable}<button class="btn primary block" onclick={() => gameAction({ type: 'next' })}>{g.round + 1 >= g.total ? 'Résultat final' : 'Manche suivante'}</button>{/if}

@@ -4,6 +4,7 @@ import { joinRoom } from 'trystero'
 import { load, save } from './storage'
 import { pushHistory, type SipEvent } from './sips'
 import { modules } from '../games/registry'
+import { assignDistinct, assignLook } from './looks'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
 export interface Profile { id: string; name: string; color: string; avatar: string }
@@ -38,8 +39,12 @@ export const makeCode = () => Array.from({ length: 4 }, () => LETTERS[Math.floor
 
 export function myProfile(): Profile {
   const p = load<Profile | null>('picole.profile', null)
-  if (p) return p
+  if (p) {
+    if (!p.avatar) { p.avatar = assignLook(p.id); save('picole.profile', p) }
+    return p
+  }
   const fresh: Profile = { id: crypto.randomUUID(), name: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], avatar: '' }
+  fresh.avatar = assignLook(fresh.id)
   save('picole.profile', fresh)
   return fresh
 }
@@ -84,7 +89,10 @@ function applyIntent(i: Intent, peerId: string) {
   if (i.t === 'join') {
     peerToPlayer.set(peerId, i.profile.id)
     const others = s.players.filter((p) => p.id !== i.profile.id)
-    commit({ ...s, players: [...others, { ...i.profile, connected: true }] })
+    // chaque joueur a un look différent dans le salon
+    const taken = others.map((p) => p.avatar)
+    const avatar = i.profile.avatar && !taken.includes(i.profile.avatar) ? i.profile.avatar : assignDistinct(i.profile.id, taken)
+    commit({ ...s, players: [...others, { ...i.profile, avatar, connected: true }] })
     if (s.game) deliverPriv({ [i.profile.id]: modules[s.game.id]?.privFor?.(s.game.data, secret, i.profile.id) ?? undefined })
   } else if (i.t === 'packs') {
     replacePacks(i.packs)

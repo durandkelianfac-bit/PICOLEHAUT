@@ -60,7 +60,7 @@
       <h3>Joueurs ({s.players.length})</h3>
       {#each s.players as p (p.id)}
         <div class="row player" class:off={!p.connected}>
-          <Avatar name={p.name} color={p.color} size={44} />
+          <Avatar name={p.name} color={p.color} look={p.avatar} size={44} />
           <strong>{p.name}{p.id === s.hostId ? ' 👑' : ''}</strong>
           <span class="muted tot">{tot[p.id] ? `${tot[p.id].drunk} ${s.sober ? 'pts' : '🍺'} · ${tot[p.id].given} donnés` : ''}</span>
         </div>

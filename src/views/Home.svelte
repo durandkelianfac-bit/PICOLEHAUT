@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { go } from '../lib/router.svelte'
+  import HeroAvatar3D from '../components/HeroAvatar3D.svelte'
   let x = $state(0), y = $state(0)
+  let ready = $state(false) // personnage 3D prêt : le placeholder SVG s'efface
 
   // Parallaxe : gyroscope si autorisé (iOS : permission après un geste), sinon souris.
   function onOrient(e: DeviceOrientationEvent) {
@@ -30,8 +32,9 @@
 
   <section class="stage">
     <h1 class="title"><span>Picole</span><span>Haut</span></h1>
-    <!-- Placeholder avatar 3D : sera remplacé par un PNG détouré (phase 7). -->
-    <svg class="avatar" style="transform: translate({x * 14}px, {y * 10}px)" viewBox="0 0 200 240" aria-hidden="true">
+    <!-- Personnage 3D (Three.js, chargé à la demande) ; le SVG sert de placeholder tant qu'il n'est pas prêt. -->
+    <div class="avatar3d" class:on={ready} style="transform: translate({x * 10}px, {y * 8}px)"><HeroAvatar3D {x} {y} onready={() => (ready = true)} /></div>
+    <svg class="avatar" class:off={ready} style="transform: translate({x * 14}px, {y * 10}px)" viewBox="0 0 200 240" aria-hidden="true">
       <defs>
         <radialGradient id="skin" cx="38%" cy="30%"><stop offset="0" stop-color="#ffe9b8" /><stop offset="1" stop-color="#F5CB5C" /></radialGradient>
       </defs>
@@ -60,6 +63,9 @@
   .stage { position: relative; display: grid; place-items: center; min-height: 340px; margin-top: 8px; }
   .title { position: absolute; z-index: 1; text-align: center; font-size: clamp(3.4rem, 22vw, 6.6rem); display: flex; flex-direction: column; color: var(--c-text); }
   .title span:last-child { color: var(--c-accent); }
-  .avatar { position: relative; z-index: 2; width: 62%; max-width: 250px; margin-top: 70px; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); transition: transform .12s linear; }
+  .avatar { grid-area: 1 / 1; position: relative; z-index: 2; width: 62%; max-width: 250px; margin-top: 70px; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); transition: transform .12s linear; }
+  .avatar.off { display: none; }
+  .avatar3d { position: relative; z-index: 2; width: 70%; max-width: 300px; aspect-ratio: 4 / 5; margin-top: 50px; grid-area: 1 / 1; opacity: 0; transition: opacity .4s; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); }
+  .avatar3d.on { opacity: 1; }
   .lead { text-align: center; margin: 0; }
 </style>

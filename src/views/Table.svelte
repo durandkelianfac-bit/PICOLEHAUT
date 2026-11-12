@@ -31,7 +31,7 @@
   {:else}
     <div class="lobby">
       <div class="stack"><span class="muted">Rejoins le salon</span><div class="code">{s.code}</div>{#if qr}<img src={qr} alt="QR code du salon" width="220" height="220" />{/if}</div>
-      <div class="stack">{#each s.players as p}<div class="row"><Avatar name={p.name} color={p.color} size={56} /><strong style="font-size:1.4rem">{p.name}</strong></div>{/each}</div>
+      <div class="stack">{#each s.players as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={56} /><strong style="font-size:1.4rem">{p.name}</strong></div>{/each}</div>
     </div>
   {/if}
 </main>

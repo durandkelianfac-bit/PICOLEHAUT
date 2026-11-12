@@ -10,6 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,glb}'] },
       manifest: {
         name: 'PICOLE HAUT',
         short_name: 'PICOLE HAUT',
