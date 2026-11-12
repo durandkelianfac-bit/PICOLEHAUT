@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { palmier, type PalPub, type PalSecret } from './module'
+import { palmier, SPREAD, type PalPub, type PalSecret } from './module'
 import { effectOf, tenResult, effectTitle } from './logic'
 import type { Card } from '../pyramide/logic'
 import type { SipEvent } from '../../lib/sips'
@@ -125,5 +125,40 @@ describe('Palmier', () => {
     r = run(r.pub, r.secret, 'a', { type: 'draw' })
     r = run(r.pub, r.secret, 'a', { type: 'next' })
     expect(r.pub.phase).toBe('end')
+  })
+})
+
+describe('éventail de cartes', () => {
+  it('on choisit une carte parmi l’éventail : seule celle-là quitte le paquet', () => {
+    const r = startWith([c(2, 'C'), c(3, 'C'), c(4, 'C')])
+    const before = r.secret.deck.map((x) => `${x.v}${x.s}`)
+    const d = run(r.pub, r.secret, 'a', { type: 'draw', index: 2 })
+    expect(d.pub.card).toEqual(c(4, 'C'))
+    expect(d.secret.deck.length).toBe(before.length - 1)
+    expect(d.secret.deck.map((x) => `${x.v}${x.s}`)).toEqual(before.filter((_, i) => i !== 2))
+    expect(d.pub.deckLeft).toBe(before.length - 1)
+  })
+  it('refuse un index hors de l’éventail', () => {
+    const r = startWith([c(7)])
+    expect(SPREAD).toBe(8)
+    expect(() => run(r.pub, r.secret, 'a', { type: 'draw', index: SPREAD })).toThrow(/éventail/)
+    expect(() => run(r.pub, r.secret, 'a', { type: 'draw', index: -1 })).toThrow(/éventail/)
+    expect(() => run(r.pub, r.secret, 'a', { type: 'draw', index: 1.5 })).toThrow(/éventail/)
+  })
+  it('l’éventail se réduit quand le paquet est presque vide', () => {
+    let r = startWith([c(7)])
+    r = { ...r, secret: { ...r.secret, deck: [c(7), c(8)] } }
+    expect(() => run(r.pub, r.secret, 'a', { type: 'draw', index: 2 })).toThrow(/éventail/)
+    expect(run(r.pub, r.secret, 'a', { type: 'draw', index: 1 }).pub.card).toEqual(c(8))
+  })
+  it('les gorgées données portent le nom du donneur (message taquin)', () => {
+    let r = startWith([c(4, 'H')])
+    r = run(r.pub, r.secret, 'a', { type: 'draw' })
+    r = run(r.pub, r.secret, 'a', { type: 'distribute', alloc: { b: 3, c: 1 } })
+    expect(r.sips!.filter((s) => s.kind === 'drink').every((s) => s.by === 'a')).toBe(true)
+    let t = startWith([c(1, 'H')])
+    t = run(t.pub, t.secret, 'a', { type: 'draw' })
+    t = run(t.pub, t.secret, 'a', { type: 'target', id: 'c' })
+    expect(t.sips!.find((s) => s.kind === 'drink')).toMatchObject({ playerId: 'c', by: 'a' })
   })
 })

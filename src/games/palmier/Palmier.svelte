@@ -3,10 +3,11 @@
   import PlayingCard from '../../components/PlayingCard.svelte'
   import LaserPad from '../../components/LaserPad.svelte'
   import Tower from './Tower.svelte'
-  import { session, gameAction, stopGame } from '../../lib/room.svelte'
+  import { onMount } from 'svelte'
+  import { session, gameAction, stopGame, onLaserClick } from '../../lib/room.svelte'
   import { effectTitle } from './logic'
   import { sipsConfig } from '../../config/sips.config'
-  import type { PalPub } from './module'
+  import { SPREAD, type PalPub } from './module'
 
   let { view = 'phone' }: { view?: 'phone' | 'table' } = $props()
 
@@ -22,6 +23,18 @@
   const act = (action: unknown) => gameAction(action, isTable ? s.hostId : undefined)
   const total = $derived((g.card?.v ?? 0) * sipsConfig.palmier.lowPerValue)
   const tableMode = $derived(s.mode === 'table')
+
+  // Éventail de cartes face cachée : on en choisit UNE (au toucher, ou au laser sur l'écran central)
+  const fanCount = $derived(Math.min(SPREAD, g.deckLeft))
+  const picking = $derived(g.phase === 'play' && g.step === 'draw')
+  onMount(() => {
+    if (!isTable) return
+    return onLaserClick((m) => {
+      if (!picking || m.id !== cur) return
+      const el = document.elementFromPoint(m.x * innerWidth, m.y * innerHeight)?.closest('[data-idx]') as HTMLElement | null
+      if (el) gameAction({ type: 'draw', index: Number(el.dataset.idx) }, m.id)
+    })
+  })
 
   let alloc = $state<Record<string, number>>({})
   let ruleText = $state('')
@@ -77,16 +90,24 @@
         {#if g.card}
           <div class="bigcard"><PlayingCard card={g.card} w={isTable ? 150 : 110} /></div>
           <div class="effect">{effectTitle(g.card)}{#if g.eight}<div class="eight">« {g.eight} »</div>{/if}</div>
-        {:else}
-          <div class="bigcard"><PlayingCard w={isTable ? 150 : 110} /></div>
+        {:else if picking}
+          <div class="fan" role="group" aria-label="Cartes à choisir">
+            {#each Array(fanCount) as _, i}
+              <button class="pick" data-idx={i} style="--r:{(i - (fanCount - 1) / 2) * 6}deg" disabled={!mine} onclick={() => act({ type: 'draw', index: i })} aria-label="Carte {i + 1}">
+                <PlayingCard w={isTable ? 110 : 62} />
+              </button>
+            {/each}
+          </div>
         {/if}
         {#if isTable && g.tower}<div class="tower"><Tower active={g.step === 'place'} playerId={cur} onresult={(r) => act({ type: r })} /></div>{/if}
       </div>
 
       {#if !isTable}
         {#if g.step === 'draw'}
-          {#if mine}<button class="btn primary block big" onclick={() => act({ type: 'draw' })}>Tirer une carte</button>
-          {:else}<p class="muted center">{curP?.name} va tirer une carte…</p>{/if}
+          {#if mine}
+            <p class="center"><strong>Choisis une carte !</strong> <span class="muted">Une seule, au toucher.</span></p>
+            {#if tableMode}<section class="card stack"><span class="muted">Ou vise la carte sur l’écran central :</span><LaserPad playerId={me} label="Tape pour choisir la carte visée" /></section>{/if}
+          {:else}<p class="muted center">{curP?.name} choisit une carte…</p>{/if}
         {/if}
 
         {#if g.need === 'give' && mine}
@@ -154,6 +175,12 @@
   .step { width: 44px; height: 44px; border-radius: 50%; background: var(--c-bg); box-shadow: var(--shadow-out); font-size: 1.4rem; font-weight: 800; }
   .n { min-width: 24px; text-align: center; font-size: 1.2rem; }
   .pad { position: sticky; bottom: calc(var(--nav-h) + 8px); z-index: 5; }
+  .fan { display: flex; justify-content: center; padding: 18px 20px 6px; width: 100%; }
+  .pick { margin-left: -30px; padding: 0; border-radius: 10px; transform: rotate(var(--r)) translateY(calc(var(--r) * var(--r) * .02)); transition: transform .2s var(--ease); }
+  .pick:first-child { margin-left: 0; }
+  .pick:not(:disabled):hover, .pick:not(:disabled):focus-visible { transform: rotate(var(--r)) translateY(-18px); z-index: 2; }
+  .pick:disabled { cursor: default; }
+  .table .pick { margin-left: -50px; }
   .tower { flex: 1; min-width: 320px; max-width: 520px; }
   .table .stage { align-items: flex-start; }
   .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 90px); background: var(--c-danger); color: #fff; padding: 10px 18px; border-radius: 99px; font-weight: 700; z-index: 60; }

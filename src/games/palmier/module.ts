@@ -25,6 +25,8 @@ export interface PalPub {
 export interface PalSecret { deck: Card[]; returned: Card[] }
 
 const cfg = sipsConfig.palmier
+/** Nombre de cartes face cachée proposées au tirage. */
+export const SPREAD = 8
 const empty = (order: string[], tower = false): PalPub => ({
   phase: 'setup', tower, order, turn: 0, step: 'draw', card: null, need: null, eight: null,
   held: { jack: null, king: null }, rule: null, banner: '', deckLeft: 52, collapses: 0, towerHeight: 0,
@@ -66,8 +68,11 @@ export const palmier: GameModule<PalPub, PalSecret> = {
       }
       case 'draw': {
         if (pub.phase !== 'play' || pub.step !== 'draw' || pid !== cur) return err('Ce n’est pas ton tour.')
+        // le joueur choisit UNE carte parmi l'éventail de cartes face cachée posé devant tout le monde
+        const idx = a.index === undefined ? 0 : Number(a.index)
+        if (!Number.isInteger(idx) || idx < 0 || idx >= Math.min(SPREAD, secret.deck.length)) return err('Choisis une carte de l’éventail.')
         const deck = [...secret.deck]
-        const card = deck.shift()!
+        const [card] = deck.splice(idx, 1)
         let held = pub.held
         let p: PalPub = { ...pub, card, step: 'resolve', need: null, eight: null, deckLeft: deck.length, banner: '' }
         let s: PalSecret = { ...secret, deck }
@@ -108,13 +113,13 @@ export const palmier: GameModule<PalPub, PalSecret> = {
         const alloc = (a.alloc ?? {}) as Record<string, number>
         if (!validAlloc(alloc, total, pub.order.filter((id) => id !== pid))) return err(`Répartis exactement ${total}.`)
         sips.push(give(pid, total, 'palmier', `Carte rouge (${pub.card.v})`))
-        for (const [id, n] of Object.entries(alloc)) if (n > 0) sips.push(drink(id, n, 'palmier', 'Carte rouge'))
+        for (const [id, n] of Object.entries(alloc)) if (n > 0) sips.push(drink(id, n, 'palmier', 'Carte rouge', pid))
         return out(after(pub))
       }
       case 'target': {
         if (pub.phase !== 'play' || pub.need !== 'target' || pid !== cur) return err('Action impossible.')
         if (!pub.order.includes(a.id) || a.id === pid) return err('Choisis quelqu’un d’autre.')
-        sips.push(give(pid, cfg.culSec, 'palmier', 'As rouge'), drink(a.id, cfg.culSec, 'palmier', 'Cul sec !'))
+        sips.push(give(pid, cfg.culSec, 'palmier', 'As rouge'), drink(a.id, cfg.culSec, 'palmier', 'Cul sec !', pid))
         return out(after(pub))
       }
       case 'rule': {

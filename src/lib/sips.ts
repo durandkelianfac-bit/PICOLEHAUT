@@ -9,17 +9,18 @@ export interface SipEvent {
   n: number
   game: string
   reason?: string
+  by?: string // qui a donné ces gorgées (si c'est une distribution)
 }
 export type Mode = 'sips' | 'points'
 
 let counter = 0
-export function makeEvent(kind: SipKind, playerId: string, n: number, game: string, reason?: string): SipEvent {
+export function makeEvent(kind: SipKind, playerId: string, n: number, game: string, reason?: string, by?: string): SipEvent {
   counter += 1
-  return { id: `${Date.now().toString(36)}-${counter}`, ts: Date.now(), kind, playerId, n: Math.max(0, Math.round(n)), game, reason }
+  return { id: `${Date.now().toString(36)}-${counter}`, ts: Date.now(), kind, playerId, n: Math.max(0, Math.round(n)), game, reason, ...(by ? { by } : {}) }
 }
 
 export const give = (playerId: string, n: number, game: string, reason?: string) => makeEvent('give', playerId, n, game, reason)
-export const drink = (playerId: string, n: number, game: string, reason?: string) => makeEvent('drink', playerId, n, game, reason)
+export const drink = (playerId: string, n: number, game: string, reason?: string, by?: string) => makeEvent('drink', playerId, n, game, reason, by)
 
 function unit(n: number, mode: Mode) {
   return mode === 'sips' ? (n > 1 ? 'gorgées' : 'gorgée') : (n > 1 ? 'points' : 'point')

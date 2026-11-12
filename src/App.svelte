@@ -2,6 +2,7 @@
   import { route } from './lib/router.svelte'
   import Nav from './components/Nav.svelte'
   import AgeGate from './components/AgeGate.svelte'
+  import SipAlert from './components/SipAlert.svelte'
   import Home from './views/Home.svelte'
   import Games from './views/Games.svelte'
   import Create from './views/Create.svelte'
@@ -22,6 +23,7 @@
 </script>
 
 <AgeGate />
+<SipAlert />
 {#if route.path === '/jeux'}<Games />
 {:else if route.path === '/creer'}<Create />
 {:else if route.path === '/rejoindre'}<Join />
