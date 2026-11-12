@@ -8,7 +8,8 @@ export const sipsConfig = {
   // lowPerValue : 2 à 6 = valeur × ce facteur. queenSips et culSec : valeurs proposées, à confirmer.
   palmier: { towerCollapseSips: 7, lowPerValue: 1, queenSips: 1, culSec: 10, tenMinorityPerPerson: 5 },
   doublage: { funniestGives: 5 },
-  guessTheSize: {},
+  // Valeurs proposées, à confirmer : le plus proche distribue, le plus éloigné boit (par manche).
+  guessTheSize: { closestGives: 3, farthestDrinks: 3 },
   cyclone: {},
 } as const
 
