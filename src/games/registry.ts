@@ -5,4 +5,5 @@ import { pyramide } from './pyramide/module'
 import { palmier } from './palmier/module'
 import { guess } from './guess/module'
 import { cyclone } from './cyclone/module'
-export const modules: Record<string, GameModule> = { hues, codenames, pyramide, palmier, guess, cyclone }
+import { doublage } from './doublage/module'
+export const modules: Record<string, GameModule> = { hues, codenames, pyramide, palmier, guess, cyclone, doublage }

@@ -15,5 +15,5 @@ export const games: GameMeta[] = [
   { id: 'palmier', name: 'Palmier', tagline: 'La tour qui tombe', players: '3-10', duration: '20 min', emoji: '🌴', ready: true, usesPack: false },
   { id: 'guess', name: 'Guess the size', tagline: 'Quelle taille ?', players: '2-10', duration: '10 min', emoji: '📏', ready: true, usesPack: true },
   { id: 'cyclone', name: 'Cyclone', tagline: 'Gage, action ou vérité', players: '3-10', duration: '20 min', emoji: '🌀', ready: true, usesPack: true },
-  { id: 'doublage', name: 'Doublage', tagline: 'Double le film', players: '3-8', duration: '20 min', emoji: '🎬', ready: false, usesPack: true },
+  { id: 'doublage', name: 'Doublage', tagline: 'Double le film', players: '3-8', duration: '20 min', emoji: '🎬', ready: true, usesPack: true },
 ]

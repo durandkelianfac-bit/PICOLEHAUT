@@ -5,6 +5,7 @@ import { load, save } from './storage'
 import { pushHistory, type SipEvent } from './sips'
 import { modules } from '../games/registry'
 import { assignDistinct, assignLook } from './looks'
+import { clearAudio, putAudio, registerAudioSender } from './audio.svelte'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
 export interface Profile { id: string; name: string; color: string; avatar: string }
@@ -165,6 +166,13 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
     session.priv = { ...(session.priv ?? {}), ...d }
     if (d?.error) toast(d.error)
   })
+  // audio du Doublage : enregistrements diffusés à tous les appareils
+  const audioAction = room.makeAction<ArrayBuffer>('audio')
+  registerAudioSender((buf, meta) => audioAction.send(buf, { metadata: meta }))
+  audioAction.onMessage((data, ctx) => {
+    const meta = ctx.metadata as { line?: number; mime?: string } | undefined
+    if (typeof meta?.line === 'number') putAudio(meta.line, new Blob([data], { type: meta.mime || 'audio/webm' }))
+  })
   pointerAction.onMessage((m) => {
     const st = session.state
     const pl = st?.players.find((p) => p.id === m.id)
@@ -256,4 +264,5 @@ export async function leaveRoom() {
   peerToPlayer.clear()
   session.state = null; session.status = 'idle'; session.isHost = false; session.priv = null; session.pointers = {}
   tablePeers.clear(); secret = null
+  registerAudioSender(null); clearAudio()
 }

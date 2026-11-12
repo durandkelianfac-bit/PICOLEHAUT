@@ -40,6 +40,19 @@
     {/each}
   </div>
 
+  {#if gameId === 'doublage'}
+    <div class="card stack"><strong>Format d’un extrait</strong>
+      <code>lien ou id YouTube | début (s) | fin (s) | titre | 1.5:Réplique avec ___ ## 6:Autre réplique</code>
+      <span class="muted">Le nombre devant « : » est l’instant de la réplique (en secondes depuis le début de l’extrait). « ___ » est un trou que le joueur remplit. Extraits courts (10 à 30 s) recommandés.</span></div>
+  {:else if gameId === 'cyclone'}
+    <div class="card stack"><strong>Format d’une carte</strong>
+      <code>intensité (1 soft, 2 moyen, 3 épicé) | texte | gorgées</code>
+      <span class="muted">Catégories : Gage et Vérité (gorgées si refus), Action (gorgées distribuées). {'{autre}'} = un autre joueur tiré au sort.</span></div>
+  {:else if gameId === 'guess'}
+    <div class="card stack"><strong>Format d’un objet</strong>
+      <code>nom | taille en mètres | emoji</code>
+      <span class="muted">Ajoute uniquement des tailles que tu as vérifiées (Wikipédia, Wikidata).</span></div>
+  {/if}
   {#if pack}
     {#each pack.categories as c (c.id)}
       <section class="card stack">

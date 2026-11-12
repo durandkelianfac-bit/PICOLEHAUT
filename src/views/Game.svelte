@@ -5,6 +5,7 @@
   import Palmier from '../games/palmier/Palmier.svelte'
   import Guess from '../games/guess/Guess.svelte'
   import Cyclone from '../games/cyclone/Cyclone.svelte'
+  import Doublage from '../games/doublage/Doublage.svelte'
   import { session, stopGame } from '../lib/room.svelte'
   import { go } from '../lib/router.svelte'
   const game = $derived(session.state?.game)
@@ -17,5 +18,6 @@
   {#if game?.id === 'palmier'}<Palmier view="phone" />{/if}
   {#if game?.id === 'guess'}<Guess view="phone" />{/if}
   {#if game?.id === 'cyclone'}<Cyclone view="phone" />{/if}
+  {#if game?.id === 'doublage'}<Doublage view="phone" />{/if}
   {#if session.isHost}<button class="btn block" onclick={stopGame}>Arrêter la partie</button>{/if}
 </main>
