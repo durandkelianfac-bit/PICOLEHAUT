@@ -162,6 +162,12 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
   session.pointers = {}
   session.status = 'connecting'
   session.error = ''
+  // Trystero chiffre les échanges avec crypto.subtle, réservé aux pages sécurisées (https:// ou localhost)
+  if (!globalThis.crypto?.subtle) {
+    session.status = 'error'
+    session.error = 'Le salon demande une page sécurisée : ouvre le site en https:// (ou en localhost sur l’ordinateur).'
+    return
+  }
   try {
     // identity 'none' : pas d'identité Trystero persistante (nos joueurs ont leur propre identifiant)
     room = joinRoom({ appId: APP_ID, identity: 'none' }, code)
