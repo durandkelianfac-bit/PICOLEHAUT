@@ -1,7 +1,7 @@
 <script lang="ts">
   // Personnage 3D temps réel du hero (fond transparent), parallaxe pilotée par x et y (-1 à 1).
   import { onMount } from 'svelte'
-  let { x = 0, y = 0, color = '#F5CB5C', look = 'wave', onready }: { x?: number; y?: number; color?: string; look?: string; onready?: () => void } = $props()
+  let { x = 0, y = 0, color = '#F5CB5C', look = 'wave+tophat', onready }: { x?: number; y?: number; color?: string; look?: string; onready?: () => void } = $props()
 
   let canvas: HTMLCanvasElement
   let px = 0, py = 0 // valeurs courantes lues par la boucle de rendu
