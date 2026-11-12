@@ -1,0 +1,65 @@
+<script lang="ts">
+  import { onMount } from 'svelte'
+  import { go } from '../lib/router.svelte'
+  let x = $state(0), y = $state(0)
+
+  // Parallaxe : gyroscope si autorisé (iOS : permission après un geste), sinon souris.
+  function onOrient(e: DeviceOrientationEvent) {
+    x = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 30))
+    y = Math.max(-1, Math.min(1, ((e.beta ?? 45) - 45) / 30))
+  }
+  async function enableGyro() {
+    const D = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+    try {
+      if (typeof D.requestPermission === 'function') { if ((await D.requestPermission()) !== 'granted') return }
+      addEventListener('deviceorientation', onOrient)
+    } catch { /* indisponible */ }
+  }
+  function onMouse(e: MouseEvent) { x = (e.clientX / innerWidth - 0.5) * 2; y = (e.clientY / innerHeight - 0.5) * 2 }
+  onMount(() => {
+    const D = DeviceOrientationEvent as unknown as { requestPermission?: unknown }
+    if (typeof D.requestPermission !== 'function') addEventListener('deviceorientation', onOrient)
+    return () => removeEventListener('deviceorientation', onOrient)
+  })
+</script>
+
+<svelte:window onmousemove={onMouse} onpointerdown={enableGyro} />
+
+<main class="page hero">
+  <header class="menu"><a href="#/jeux">Jeux</a><a href="#/regles">Règles</a><a href="#/rejoindre">Rejoindre</a></header>
+
+  <section class="stage">
+    <h1 class="title"><span>Picole</span><span>Haut</span></h1>
+    <!-- Placeholder avatar 3D : sera remplacé par un PNG détouré (phase 7). -->
+    <svg class="avatar" style="transform: translate({x * 14}px, {y * 10}px)" viewBox="0 0 200 240" aria-hidden="true">
+      <defs>
+        <radialGradient id="skin" cx="38%" cy="30%"><stop offset="0" stop-color="#ffe9b8" /><stop offset="1" stop-color="#F5CB5C" /></radialGradient>
+      </defs>
+      <ellipse cx="100" cy="228" rx="62" ry="10" fill="#000" opacity=".35" />
+      <path d="M52 232c0-44 22-64 48-64s48 20 48 64z" fill="#CFDBD5" />
+      <circle cx="100" cy="110" r="68" fill="url(#skin)" />
+      <path d="M40 98c2-46 38-66 70-60 34 6 52 32 50 60-16-22-40-30-62-28-24 0-44 10-58 28z" fill="#333533" />
+      <circle cx="76" cy="116" r="11" fill="#fff" /><circle cx="124" cy="116" r="11" fill="#fff" />
+      <circle cx="78" cy="118" r="6" fill="#242423" /><circle cx="126" cy="118" r="6" fill="#242423" />
+      <path d="M72 148q28 24 56 0" stroke="#242423" stroke-width="7" fill="none" stroke-linecap="round" />
+      <path d="M148 168l14-30 10 4-6 30z" fill="#E8EDDF" opacity=".9" />
+    </svg>
+  </section>
+
+  <p class="muted lead">Des jeux entre amis, à boire (ou pas). Un téléphone chacun, zéro compte.</p>
+  <div class="stack">
+    <button class="btn primary block" onclick={() => go('/creer')}>Créer un salon</button>
+    <button class="btn block" onclick={() => go('/rejoindre')}>Rejoindre avec un code</button>
+  </div>
+</main>
+
+<style>
+  .hero { display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+  .menu { display: flex; gap: 22px; justify-content: center; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--c-soft); }
+  .menu a:hover { color: var(--c-accent); }
+  .stage { position: relative; display: grid; place-items: center; min-height: 340px; margin-top: 8px; }
+  .title { position: absolute; z-index: 1; text-align: center; font-size: clamp(3.4rem, 22vw, 6.6rem); display: flex; flex-direction: column; color: var(--c-text); }
+  .title span:last-child { color: var(--c-accent); }
+  .avatar { position: relative; z-index: 2; width: 62%; max-width: 250px; margin-top: 70px; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); transition: transform .12s linear; }
+  .lead { text-align: center; margin: 0; }
+</style>
