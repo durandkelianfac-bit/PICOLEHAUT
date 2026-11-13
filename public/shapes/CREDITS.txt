@@ -5,3 +5,5 @@ cd.png        — « Compact Disc.png », liamz2r, domaine public.
 pingpong.png  — « Table tennis ball.png », photo de Dontworry, CC BY-SA 3.0.
                 https://commons.wikimedia.org/wiki/File:Table_tennis_ball.png
                 https://creativecommons.org/licenses/by-sa/3.0/
+
+Les 23 fichiers .svg sont des silhouettes dessinées pour ce projet (générées par script), libres de droits.

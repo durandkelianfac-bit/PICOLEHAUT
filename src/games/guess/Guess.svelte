@@ -3,7 +3,7 @@
   import { session, gameAction, stopGame } from '../../lib/room.svelte'
   import { fmtSize, ratioToSlider, sliderToRatio } from './logic'
   import { loadShape, type Shape } from '../../lib/emojiShape'
-  import { shapeImage } from '../../config/shapes.guess'
+  import { shapeImage, shapeDim } from '../../config/shapes.guess'
   import type { GuessPub } from './module'
 
   let { view = 'phone' }: { view?: 'phone' | 'table' } = $props()
@@ -34,13 +34,20 @@
     for (const e of [key(g.current?.ref), key(g.current?.target)]) if (e && !shapes[e]) loadShape(e).then((s) => (shapes[e] = s)).catch(() => {})
   })
   const ar = (e?: string) => (e ? shapes[e]?.ar ?? 1 : 1)
+  // la taille d'un objet est sa hauteur, ou sa largeur pour les objets « longueur » (avions, court, piscine…)
+  const wide = (o?: { name: string }) => !!o && shapeDim(o.name) === 'w'
   // si un objet est très large, on réduit toute la scène pour qu'il ne déborde pas
-  const k = $derived(Math.min(1, 130 / (190 * Math.max(ar(key(g.current?.ref)), ar(key(g.current?.target))))))
+  const fit = (o?: { name: string }) => { const r = ar(key(o)); const wd = wide(o); return Math.min(1, 130 / (190 * (wd ? 1 : r)), wd ? r : 1) }
+  const k = $derived(Math.min(fit(g.current?.ref), fit(g.current?.target)))
   const h = (size: number) => Math.max(3, (size / sceneMax) * 190 * k)
 </script>
 
-{#snippet shape(e: string, cx: number, ht: number, f: string)}
-  {#if shapes[e]}<image href={shapes[e].url} x={cx - (ht * shapes[e].ar) / 2} y={215 - ht} width={ht * shapes[e].ar} height={ht} filter="url(#{f})" />{/if}
+{#snippet shape(e: string, cx: number, ht: number, f: string, isWide = false)}
+  {#if shapes[e]}
+    {@const w = isWide ? ht : ht * shapes[e].ar}
+    {@const hh = w / shapes[e].ar}
+    <image href={shapes[e].url} x={cx - w / 2} y={215 - hh} width={w} height={hh} filter="url(#{f})" />
+  {/if}
 {/snippet}
 
 <div class="game" class:table={isTable}>
@@ -72,14 +79,14 @@
       </defs>
       <line x1="10" y1="215" x2="310" y2="215" stroke="#CFDBD5" stroke-opacity=".4" />
       <!-- référence (bleu) -->
-      {@render shape(key(g.current.ref), 70, h(refSize), "sil-ref")}
+      {@render shape(key(g.current.ref), 70, h(refSize), "sil-ref", wide(g.current.ref))}
       <text x="70" y="233" text-anchor="middle" font-size="9" fill="#4f9dff">{g.current.ref.name.split(' (')[0]}</text>
       <text x="70" y="244" text-anchor="middle" font-size="9" fill="#E8EDDF">{fmtSize(refSize)}</text>
       <!-- cible (rouge) : c'est elle qui grandit -->
       {#if g.phase === 'guess'}
-        {@render shape(key(g.current.target), 230, h(guessSize), "sil-target")}
+        {@render shape(key(g.current.target), 230, h(guessSize), "sil-target", wide(g.current.target))}
       {:else if g.result}
-        {@render shape(key(g.current.target), 230, h(g.result.real), "sil-target")}
+        {@render shape(key(g.current.target), 230, h(g.result.real), "sil-target", wide(g.current.target))}
         {#each Object.entries(g.result.guesses) as [id, gs], i}
           <line x1="190" y1={215 - h(gs.size)} x2="270" y2={215 - h(gs.size)} stroke={player(id)?.color} stroke-width="3" stroke-dasharray="6 3" />
           <circle cx={278 + (i % 3) * 12} cy={215 - h(gs.size)} r="5" fill={player(id)?.color} />
