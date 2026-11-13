@@ -71,11 +71,12 @@ export const session = $state<{
   isHost: boolean
   me: Profile | null
   role: 'player' | 'table'
+  plays: boolean // l'écran central joue aussi (il a un profil de joueur)
   priv: any
   pointers: Record<string, Pointer>
   toast: string
   peers: number
-}>({ state: null, status: 'idle', error: '', isHost: false, me: null, role: 'player', priv: null, pointers: {}, toast: '', peers: 0 })
+}>({ state: null, status: 'idle', error: '', isHost: false, me: null, role: 'player', plays: false, priv: null, pointers: {}, toast: '', peers: 0 })
 
 /** Abonnés aux clics laser (l'écran table les convertit en actions de jeu). */
 const clickListeners = new Set<(m: PointerMsg) => void>()
@@ -154,11 +155,12 @@ function deliverPriv(priv?: Record<string, unknown>) {
   }
 }
 
-function connect(code: string, host: boolean, initial?: RoomState, asTable = false) {
+function connect(code: string, host: boolean, initial?: RoomState, asTable = false, alsoPlay = false) {
   const me = myProfile()
   session.me = me
   session.isHost = host
   session.role = asTable ? 'table' : 'player'
+  session.plays = asTable && alsoPlay
   session.priv = null
   session.pointers = {}
   session.status = 'connecting'
@@ -228,8 +230,9 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
       replacePacks(s.packs)
       // (re)connexion : se présenter à l'hôte, aussi après une coupure
       if (!s.game) session.priv = null
-      if (asTable) { if (first) sendIntent?.({ t: 'join-table' }, ctx.peerId) }
-      else if (first || !s.players.some((p) => p.id === me.id && p.connected)) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
+      if (asTable && first) sendIntent?.({ t: 'join-table' }, ctx.peerId)
+      // un joueur normal, ou un écran central qui joue aussi, se présente à l'hôte (aussi après une coupure)
+      if ((!asTable || alsoPlay) && (first || !s.players.some((p) => p.id === me.id && p.connected))) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
     })
     room.onPeerLeave(({ peerId }) => {
       if (peerId === hostPeerId) { session.status = 'connecting' }
@@ -265,9 +268,9 @@ export function resumeRoom(code: string): boolean {
   return true
 }
 
-export function joinExisting(code: string, profile: Profile, asTable = false) {
-  if (!asTable) saveProfile(profile)
-  connect(code.toUpperCase(), false, undefined, asTable)
+export function joinExisting(code: string, profile: Profile, asTable = false, alsoPlay = false) {
+  if (!asTable || alsoPlay) saveProfile(profile)
+  connect(code.toUpperCase(), false, undefined, asTable, alsoPlay)
 }
 
 export function startGame(gameId: string) { applyIntent({ t: 'start', gameId }, 'self') }

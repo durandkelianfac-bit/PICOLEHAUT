@@ -82,7 +82,7 @@
         Matter.Body.setVelocity(held, { x: 0, y: 0 })
         Matter.Body.setAngularVelocity(held, 0)
       }
-      Matter.Engine.update(engine, dt)
+      Matter.Engine.update(engine, Math.min(dt, 16.667))
 
       // détection : effondrement, ou carte posée et immobile
       if (released && held && !reported) {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import QRCode from 'qrcode'
   import Avatar from '../components/Avatar.svelte'
+  import Chase from '../components/Chase.svelte'
   import { session, leaveRoom, reportSips, setSober, resumeRoom, startGame } from '../lib/room.svelte'
   import { drink, give, formatEvent, totals } from '../lib/sips'
   import { sipsConfig } from '../config/sips.config'
@@ -66,6 +67,8 @@
         </div>
       {/each}
     </section>
+
+    <Chase players={s.players} />
 
     <section class="card stack">
       <h3>Jeux</h3>

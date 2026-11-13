@@ -20,7 +20,7 @@
     for (const e of [...s.history].reverse()) {
       if (seen.has(e.id)) continue
       seen.add(e.id)
-      if (e.kind !== 'drink' || e.playerId !== me || session.role !== 'player' || e.n <= 0) continue
+      if (e.kind !== 'drink' || e.playerId !== me || (session.role !== 'player' && !session.plays) || e.n <= 0) continue
       const from = s.players.find((p) => p.id === e.by)?.name ?? 'Quelqu’un'
       // le genre n'accorde les messages que pour le Palmier, pour l'instant
       const gender = e.game === 'palmier' ? mine?.gender : undefined
