@@ -140,10 +140,10 @@ export const palmier: GameModule<PalPub, PalSecret> = {
         if (pub.phase !== 'play') return err('Action impossible.')
         if (a.card !== 'jack' && a.card !== 'king') return err('Carte inconnue.')
         if (pub.held[a.card as 'jack' | 'king'] !== pid) return err('Tu n’as pas cette carte.')
-        if (a.card === 'jack') return out({ ...pub, banner: `❄️ ${name(pid)} joue le Valet : FREEZE ! Le dernier à poser le pouce boit.` })
+        if (a.card === 'jack') return out({ ...pub, banner: `${name(pid)} joue le Valet : FREEZE ! Le dernier à poser le pouce boit.` })
         const text = String(a.text ?? '').trim().slice(0, 140)
         if (!text) return err('Écris ta règle.')
-        return out({ ...pub, banner: `👑 ${name(pid)} (Roi) : ${text}` })
+        return out({ ...pub, banner: `${name(pid)} (Roi) : ${text}` })
       }
       case 'decree': {
         // le roi, pendant son règne, envoie autant de gorgées qu'il veut au joueur de son choix
@@ -153,7 +153,7 @@ export const palmier: GameModule<PalPub, PalSecret> = {
         if (!Number.isInteger(n) || n < 1 || n > 1_000_000) return err('Nombre invalide.')
         if (!pub.order.includes(a.to) || a.to === pid) return err('Choisis un autre joueur.')
         sips.push(give(pid, n, 'palmier', 'Décret du roi'), drink(a.to, n, 'palmier', 'Cadeau du roi', pid, 'royal'))
-        return out({ ...pub, banner: `👑 ${name(pid)} offre ${n} à ${name(a.to)} !` })
+        return out({ ...pub, banner: `${name(pid)} offre ${n} à ${name(a.to)} !` })
       }
       case 'placed': {
         if (pub.phase !== 'play' || pub.step !== 'place' || (pid !== cur && !isHost)) return err('Action impossible.')
@@ -162,7 +162,7 @@ export const palmier: GameModule<PalPub, PalSecret> = {
       case 'collapsed': {
         if (pub.phase !== 'play' || pub.step !== 'place' || (pid !== cur && !isHost)) return err('Action impossible.')
         sips.push(drink(cur, cfg.towerCollapseSips, 'palmier', 'La tour s’effondre !'))
-        return nextTurn({ ...pub, towerHeight: 0, collapses: pub.collapses + 1, banner: `💥 La tour s’effondre ! ${name(cur)} boit ${cfg.towerCollapseSips}` }, secret)
+        return nextTurn({ ...pub, towerHeight: 0, collapses: pub.collapses + 1, banner: `La tour s’effondre ! ${name(cur)} boit ${cfg.towerCollapseSips}` }, secret)
       }
       case 'next': {
         if (pub.phase !== 'play' || pub.step !== 'done' || (pid !== cur && !isHost)) return err('Action impossible.')

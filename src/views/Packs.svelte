@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte'
   import { packsStore, updatePacks, newItem, newCategory, exportPacks, importPacks } from '../lib/packs.svelte'
   import { session } from '../lib/room.svelte'
   import ClipMaker from '../components/ClipMaker.svelte'
@@ -34,7 +35,7 @@
 
 <main class="page stack">
   <h2>Packs</h2>
-  <p class="muted" style="margin:0">{live ? '🟢 En salon : tes modifications sont envoyées en direct à tous les téléphones.' : 'Hors salon : sauvegarde locale sur cet appareil.'}</p>
+  <p class="muted" style="margin:0">{live ? 'En salon : tes modifications sont envoyées en direct à tous les téléphones.' : 'Hors salon : sauvegarde locale sur cet appareil.'}</p>
   <div class="tabs" role="tablist">
     {#each Object.values(packsStore.packs) as p}
       <button role="tab" aria-selected={gameId === p.gameId} class:on={gameId === p.gameId} onclick={() => (gameId = p.gameId)}>{p.name.split(' — ')[0]}</button>
@@ -61,11 +62,11 @@
         <div class="row">
           <h3 style="flex:1">{c.name} <span class="muted">({c.items.length})</span></h3>
           <button class="chip" onclick={() => toggle(c.id)} aria-pressed={c.enabled}>{c.enabled ? 'Activée' : 'Désactivée'}</button>
-          <button class="chip" onclick={() => delCat(c.id)} aria-label="Supprimer la catégorie {c.name}">✕</button>
+          <button class="chip" onclick={() => delCat(c.id)} aria-label="Supprimer la catégorie {c.name}"><Icon name="close" /></button>
         </div>
         <div class="items">
           {#each c.items as i (i.id)}
-            <span class="item"><input value={i.text} onchange={(e) => editItem(c.id, i.id, e.currentTarget.value)} aria-label="Élément" /><button onclick={() => delItem(c.id, i.id)} aria-label="Supprimer {i.text}">✕</button></span>
+            <span class="item"><input value={i.text} onchange={(e) => editItem(c.id, i.id, e.currentTarget.value)} aria-label="Élément" /><button onclick={() => delItem(c.id, i.id)} aria-label="Supprimer {i.text}"><Icon name="close" /></button></span>
           {/each}
         </div>
         <form class="row" onsubmit={(e) => { e.preventDefault(); addItem(c.id) }}>

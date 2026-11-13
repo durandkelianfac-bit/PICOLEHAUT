@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import Avatar from '../../components/Avatar.svelte'
   import { session, gameAction, stopGame } from '../../lib/room.svelte'
   import { fmtSize, ratioToSlider, sliderToRatio } from './logic'
@@ -60,7 +61,7 @@
     </section>
   {:else if g.phase === 'end'}
     <section class="card stack">
-      <h2>🏆 {player(sorted[0]?.id)?.name}</h2>
+      <h2><Icon name="trophy" /> {player(sorted[0]?.id)?.name}</h2>
       {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} / 500</strong></div>{/each}
       {#if session.isHost && !isTable}
         <button class="btn primary block" onclick={() => gameAction({ type: 'again' })}>Rejouer</button>
@@ -69,7 +70,7 @@
     </section>
   {:else if g.current}
     <header><span class="chip">Manche {g.round + 1}/{g.total}</span>
-      <h3>Quelle est la taille de : {g.current.target.emoji} <b>{g.current.target.name}</b> ?</h3></header>
+      <h3>Quelle est la taille de : <b>{g.current.target.name}</b> ?</h3></header>
 
     <svg class="scene" viewBox="0 0 320 250" role="img" aria-label="Comparaison de tailles : la référence en bleu, la cible en rouge">
       <defs>
@@ -101,16 +102,16 @@
         <section class="card stack">
           <input type="range" min="0" max="1" step="0.001" bind:value={t} disabled={locked} aria-label="Taille de la cible" />
           <div class="row" style="justify-content:space-between"><span class="muted">plus petit</span><span class="muted">plus grand</span></div>
-          <button class="btn primary block" disabled={locked} onclick={() => act({ type: 'lock', ratio })}>{locked ? 'Validé ✔' : 'Valider ma réponse'}</button>
+          <button class="btn primary block" disabled={locked} onclick={() => act({ type: 'lock', ratio })}>{locked ? 'Validé' : 'Valider ma réponse'}</button>
         </section>
       {/if}
-      <div class="row wrap">{#each s.players as p}<span class="chip">{g.locked.includes(p.id) ? '✔' : '…'} {p.name}</span>{/each}</div>
+      <div class="row wrap">{#each s.players as p}<span class="chip">{g.locked.includes(p.id) ? "OK" : "…"} {p.name}</span>{/each}</div>
       {#if session.isHost && !isTable}<button class="btn" onclick={() => gameAction({ type: 'reveal' })}>Révéler maintenant</button>{/if}
     {:else if g.result}
       <section class="card stack">
         {#each sorted as p}
           {@const r = g.result.guesses[p.id]}
-          <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}{g.result.closest.includes(p.id) ? ' 🎯' : ''}{g.result.farthest.includes(p.id) ? ' 🍺' : ''}</span>
+          <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}{g.result.closest.includes(p.id) ? ' ·  proche' : ''}{g.result.farthest.includes(p.id) ? ' · loin' : ''}</span>
             <span class="muted">{r ? fmtSize(r.size) : '—'}</span>{#if r}<span class="chip">+{r.score}</span>{/if}<strong>{g.totals[p.id] ?? 0}</strong></div>
         {/each}
         {#if session.isHost && !isTable}<button class="btn primary block" onclick={() => gameAction({ type: 'next' })}>{g.round + 1 >= g.total ? 'Résultat final' : 'Manche suivante'}</button>{/if}

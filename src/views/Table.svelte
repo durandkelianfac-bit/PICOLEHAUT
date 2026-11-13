@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte'
   import QRCode from 'qrcode'
   import Hues from '../games/hues/Hues.svelte'
   import Codenames from '../games/codenames/Codenames.svelte'
@@ -41,11 +42,11 @@
     </div>
   {/if}
   {#if session.plays && s?.game}
-    <button class="btn primary mine" onclick={() => (privateOpen = true)}>🙈 Mon jeu</button>
+    <button class="btn primary mine" onclick={() => (privateOpen = true)}><Icon name="hide" /> Mon jeu</button>
     {#if privateOpen}
       <div class="veil" role="dialog" aria-label="Mon jeu privé">
         <div class="sheet">
-          <p class="muted" style="margin:0">⚠ Vérifie que personne ne regarde l’écran, puis referme.</p>
+          <p class="muted" style="margin:0">Vérifie que personne ne regarde l’écran, puis referme.</p>
           <PlayerPanel />
           <button class="btn primary block" onclick={() => (privateOpen = false)}>Fermer et recacher</button>
         </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte'
   import ProfileForm from '../components/ProfileForm.svelte'
   import { createRoom, myProfile, type RoomMode } from '../lib/room.svelte'
   import { go } from '../lib/router.svelte'
@@ -17,9 +18,10 @@
   <div class="card stack">
     <h3>Mode</h3>
     <div class="seg" role="radiogroup">
-      <button class:on={mode === 'equal'} onclick={() => (mode = 'equal')} role="radio" aria-checked={mode === 'equal'}>Simple</button>
-      <button class:on={mode === 'table'} onclick={() => (mode = 'table')} role="radio" aria-checked={mode === 'table'}>Écran central</button>
+      <button class:on={mode === 'equal'} onclick={() => (mode = 'equal')} role="radio" aria-checked={mode === 'equal'}><Icon name="phone" /> Simple</button>
+      <button class:on={mode === 'table'} onclick={() => (mode = 'table')} role="radio" aria-checked={mode === 'table'}><Icon name="tv" /> Écran central</button>
     </div>
+    <p class="muted" style="margin:0">{mode === 'equal' ? 'Tout le monde joue sur son téléphone.' : 'Un écran partagé (TV, ordinateur) affiche le jeu, les téléphones servent de manettes.'}</p>
     <label class="row switch"><input type="checkbox" bind:checked={sober} /><span>Sans alcool, la fête est moins folle</span></label>
   </div>
   <button class="btn primary block" disabled={!profile.name.trim()} onclick={submit}>Ouvrir le salon</button>

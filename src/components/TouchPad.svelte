@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from './Icon.svelte'
   // Pavé tactile : le doigt déplace le pointeur sur l'écran central (alternative au gyroscope, plus fiable).
   // Fond noir quadrillé ; « Poser ici » envoie un clic à la position courante.
   import { sendLaser } from '../lib/room.svelte'
@@ -26,7 +27,7 @@
     onpointerdown={down} onpointermove={drag} onpointerup={up}>
     {#if touched}<div class="cross" style="left:{x * 100}%;top:{y * 100}%"></div>{:else}<span class="hint">Glisse ton doigt ici pour viser l’écran</span>{/if}
   </div>
-  <button class="btn primary block big" disabled={!touched} onclick={() => sendLaser({ id: playerId, x, y, click: true })}>🎯 {label}</button>
+  <button class="btn primary block big" disabled={!touched} onclick={() => sendLaser({ id: playerId, x, y, click: true })}><Icon name="target" /> {label}</button>
 </div>
 
 <style>

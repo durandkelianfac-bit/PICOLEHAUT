@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import { onMount } from 'svelte'
   import Avatar from '../../components/Avatar.svelte'
   import PlayingCard from '../../components/PlayingCard.svelte'
@@ -180,7 +181,7 @@
     {#if g.phase === 'accuse' && g.accuse}
       <section class="card stack">
         <h3>{player(g.accuse.claimer)?.name} distribue</h3>
-        {#each Object.entries(g.accuse.alloc) as [id, n]}<div class="row"><Avatar name={player(id)?.name} color={player(id)?.color} look={player(id)?.avatar} size={30} /><span style="flex:1">{player(id)?.name}</span><span class="chip">{n} {unit}</span>{#if !g.accuse.pending.includes(id)}<span>✔</span>{/if}</div>{/each}
+        {#each Object.entries(g.accuse.alloc) as [id, n]}<div class="row"><Avatar name={player(id)?.name} color={player(id)?.color} look={player(id)?.avatar} size={30} /><span style="flex:1">{player(id)?.name}</span><span class="chip">{n} {unit}</span>{#if !g.accuse.pending.includes(id)}<span><Icon name="check" /></span>{/if}</div>{/each}
         {#if iAmTarget && !isTable}
           <button class="btn block" onclick={() => act({ type: 'respond', choice: 'accept' })}>J’accepte ({myAlloc})</button>
           <button class="btn primary block" onclick={() => act({ type: 'respond', choice: 'liar' })}>Menteur !</button>

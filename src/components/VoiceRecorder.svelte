@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from './Icon.svelte'
   // Enregistrement de la voix (MediaRecorder). HTTPS obligatoire ; micro demandé après un geste.
   import { onMount } from 'svelte'
   import { pickMime } from '../games/doublage/logic'
@@ -46,7 +47,7 @@
 
 <div class="stack">
   {#if state === 'idle' || state === 'error'}
-    <button class="btn primary block big" onclick={start}>🎙️ Enregistrer ma voix</button>
+    <button class="btn primary block big" onclick={start}><Icon name="mic" /> Enregistrer ma voix</button>
   {:else if state === 'rec'}
     <button class="btn block big recording" onclick={stop}>⏹ Arrêter ({secs}s / {maxSeconds}s)</button>
   {:else}

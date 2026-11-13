@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import Avatar from '../../components/Avatar.svelte'
   import YouTubeClip from '../../components/YouTubeClip.svelte'
   import VoiceRecorder from '../../components/VoiceRecorder.svelte'
@@ -93,14 +94,14 @@
       {#if session.isHost && !isTable}
         {#if clipList.length}
           <button class="btn primary block" onclick={() => gameAction({ type: 'begin' })}>Extrait au hasard ({clipList.length} dans le pack)</button>
-          {#each clipList as c, i}<button class="btn block" onclick={() => gameAction({ type: 'begin', index: i })}>🎬 {c.title}</button>{/each}
+          {#each clipList as c, i}<button class="btn block" onclick={() => gameAction({ type: 'begin', index: i })}><Icon name="clap" /> {c.title}</button>{/each}
         {:else}
           <p>Aucun extrait dans le pack. Ajoute-en dans <a href="#/packs"><b>Packs → Doublage</b></a> (format indiqué sur la page).</p>
         {/if}
       {:else}<p class="muted">L’hôte choisit l’extrait.</p>{/if}
     </section>
   {:else if g.clip}
-    <header><span class="chip">🎬 {g.clip.title}</span></header>
+    <header><span class="chip"><Icon name="clap" /> {g.clip.title}</span></header>
 
     {#if showVideo && g.phase !== 'result'}
       <div class="video">
@@ -109,7 +110,7 @@
       </div>
       <div class="row wrap">
         <button class="btn" onclick={() => ytc?.play(true)}>▶ Voir l’extrait (muet)</button>
-        {#if playsAudio && (g.phase === 'replay' || g.phase === 'vote') && !primed}<button class="btn primary" onclick={prime}>🔊 Activer le son</button>{/if}
+        {#if playsAudio && (g.phase === 'replay' || g.phase === 'vote') && !primed}<button class="btn primary" onclick={prime}><Icon name="volume" /> Activer le son</button>{/if}
       </div>
     {/if}
 
@@ -130,7 +131,7 @@
           <section class="card stack">
             <div class="row"><span class="chip">{l.at}s</span><strong style="flex:1">À toi de doubler :</strong></div>
             <p class="text">{l.text.replaceAll(BLANK, '____')}</p>
-            {#if g.submitted.includes(i)}<p>✔ Envoyé !</p>
+            {#if g.submitted.includes(i)}<p><Icon name="check" /> Envoyé !</p>
             {:else}
               {#each d.words as _, k}<input class="input" bind:value={d.words[k]} placeholder="Ton mot pour le trou {k + 1}" maxlength="40" aria-label="Trou {k + 1}" />{/each}
               <p class="muted" style="margin:0">Dis la réplique avec tes mots, en jouant la scène.</p>
@@ -140,8 +141,8 @@
           </section>
         {:else}<p class="muted center">Tu n’as pas de réplique : encourage les autres et prépare ton vote !</p>{/each}
       {/if}
-      <div class="row wrap">{#each g.clip.lines as _, i}<span class="chip">{g.submitted.includes(i) ? '✔' : '…'} {player(g.assignees[i])?.name}</span>{/each}</div>
-      {#if (session.isHost || isTable) && allSent}<button class="btn primary block" onclick={() => { if (playsAudio) prime(); act({ type: 'replay' }) }}>🎬 Lancer le montage</button>{/if}
+      <div class="row wrap">{#each g.clip.lines as _, i}<span class="chip">{g.submitted.includes(i) ? "OK" : "…"} {player(g.assignees[i])?.name}</span>{/each}</div>
+      {#if (session.isHost || isTable) && allSent}<button class="btn primary block" onclick={() => { if (playsAudio) prime(); act({ type: 'replay' }) }}><Icon name="clap" /> Lancer le montage</button>{/if}
     {/if}
 
     {#if g.phase === 'replay'}
@@ -160,15 +161,15 @@
           {#each g.order.filter((id) => id !== me) as id}
             <button class="btn block" onclick={() => act({ type: 'vote', for: id })}><Avatar name={player(id)?.name} color={player(id)?.color} look={player(id)?.avatar} size={32} /> {player(id)?.name}</button>
           {/each}
-        {:else if !isTable}<p>✔ Vote enregistré.</p>{/if}
-        <div class="row wrap">{#each s.players as p}<span class="chip">{g.voted.includes(p.id) ? '✔' : '…'} {p.name}</span>{/each}</div>
+        {:else if !isTable}<p><Icon name="check" /> Vote enregistré.</p>{/if}
+        <div class="row wrap">{#each s.players as p}<span class="chip">{g.voted.includes(p.id) ? "OK" : "…"} {p.name}</span>{/each}</div>
         {#if session.isHost || isTable}<button class="btn" onclick={() => { if (playsAudio) prime(); act({ type: 'replay' }) }}>↻ Revoir le montage</button>{/if}
       </section>
     {/if}
 
     {#if g.phase === 'result' && g.result}
       <section class="card stack">
-        <h2>🏆 {g.result.winners.map((id) => player(id)?.name).join(' & ') || 'Personne'}</h2>
+        <h2><Icon name="trophy" /> {g.result.winners.map((id) => player(id)?.name).join(' & ') || 'Personne'}</h2>
         {#if g.result.winners.length}<p>{g.result.winners.length > 1 ? 'Ils distribuent' : 'Il / elle distribue'} <b>{sipsConfig.doublage.funniestGives} {unit}</b>.</p>{/if}
         {#each s.players as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}</span><strong>{g.result.counts[p.id] ?? 0} voix</strong></div>{/each}
         {#if session.isHost && !isTable}

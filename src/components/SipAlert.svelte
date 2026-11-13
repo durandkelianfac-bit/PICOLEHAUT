@@ -25,7 +25,7 @@
       // le genre n'accorde les messages que pour le Palmier, pour l'instant
       const gender = e.game === 'palmier' ? mine?.gender : undefined
       if (e.tag === 'royal' && e.by) {
-        fresh.push({ id: e.id, tag: 'royal', header: `🎁 Un petit cadeau de ${from} 👑`, headline: sipHeadline(e.n, s.sober), msg: royalLine(e.id, gender), button: 'Merci, Majesté !' })
+        fresh.push({ id: e.id, tag: 'royal', header: `Un petit cadeau de ${from}`, headline: sipHeadline(e.n, s.sober), msg: royalLine(e.id, gender), button: 'Merci, Majesté !' })
       } else if (e.tag === 'culsec') {
         fresh.push({ id: e.id, tag: 'culsec', header: e.by ? `${from} t’offre un` : 'Tu as pioché un As noir :', headline: 'CUL SEC !', msg: culSecLine(e.id, gender), button: s.sober ? 'À fond !' : 'Santé !' })
       } else if (e.by) {

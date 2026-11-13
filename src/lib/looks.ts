@@ -3,7 +3,7 @@
 // Un avatar s'écrit « look » ou « look+accessoire » (ex. « wave+crown »).
 export type Expression = 'Angry' | 'Surprised' | 'Sad' | null
 export interface Look { id: string; label: string; expression: Expression; pose: string; time: number }
-export interface Accessory { id: string; label: string; emoji: string }
+export interface Accessory { id: string; label: string; icon: string }
 
 export const MODEL_URL = 'avatars/RobotExpressive.glb'
 
@@ -19,18 +19,18 @@ export const LOOKS: Look[] = [
   { id: 'jump', label: 'Saut', expression: 'Surprised', pose: 'Jump', time: 0.5 },
   { id: 'hello', label: 'Coucou', expression: 'Surprised', pose: 'Wave', time: 0.3 },
   { id: 'sit', label: 'Triste', expression: 'Sad', pose: 'Sitting', time: 0.6 },
-  { id: 'stand', label: 'Boudeur', expression: 'Sad', pose: 'Standing', time: 0.5 },
+  { id: 'stand', label: 'Boudeur', expression: 'Sad', pose: 'No', time: 0.25 },
 ]
 
 export const ACCESSORIES: Accessory[] = [
-  { id: 'none', label: 'Aucun', emoji: '🚫' },
-  { id: 'tophat', label: 'Haut-de-forme', emoji: '🎩' },
-  { id: 'crown', label: 'Couronne', emoji: '👑' },
-  { id: 'party', label: 'Chapeau de fête', emoji: '🥳' },
-  { id: 'cap', label: 'Casquette', emoji: '🧢' },
-  { id: 'halo', label: 'Auréole', emoji: '😇' },
-  { id: 'antenna', label: 'Antenne', emoji: '📡' },
-  { id: 'propeller', label: 'Hélice', emoji: '🚁' },
+  { id: 'none', label: 'Aucun', icon: 'none' },
+  { id: 'tophat', label: 'Haut-de-forme', icon: 'tophat' },
+  { id: 'crown', label: 'Couronne', icon: 'crown' },
+  { id: 'party', label: 'Chapeau de fête', icon: 'party' },
+  { id: 'cap', label: 'Casquette', icon: 'cap' },
+  { id: 'halo', label: 'Auréole', icon: 'halo' },
+  { id: 'antenna', label: 'Antenne', icon: 'antenna' },
+  { id: 'propeller', label: 'Hélice', icon: 'propeller' },
 ]
 
 export const lookById = (id: string): Look | undefined => LOOKS.find((l) => l.id === id)

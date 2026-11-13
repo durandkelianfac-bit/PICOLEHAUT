@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte'
   import QRCode from 'qrcode'
   import Avatar from '../components/Avatar.svelte'
   import Chase from '../components/Chase.svelte'
@@ -42,9 +43,9 @@
       <div class="code">{s.code}</div>
       {#if qr}<img class="qr" src={qr} alt="QR code pour rejoindre le salon {s.code}" width="200" height="200" />{/if}
       <div class="row" style="justify-content:center;flex-wrap:wrap">
-        <span class="chip">{s.mode === 'table' ? '📺 Écran central' : '📱 Simple'}</span>
-        <span class="chip">{session.status === 'online' ? '🟢 En ligne' : '🟠 Reconnexion…'}</span>
-        <span class="chip">{s.sober ? '🥤 Sans alcool' : '🍺 Gorgées'}</span>
+        <span class="chip">{#if s.mode === 'table'}<Icon name="tv" /> Écran central{:else}<Icon name="phone" /> Simple{/if}</span>
+        <span class="chip"><Icon name="dot" /> {session.status === 'online' ? 'En ligne' : 'Reconnexion…'}</span>
+        <span class="chip">{#if s.sober}<Icon name="cup" /> Sans alcool{:else}<Icon name="beer" /> Gorgées{/if}</span>
       </div>
       {#if session.isHost}
         <label class="row" style="justify-content:center;gap:10px"><input type="checkbox" checked={s.sober} onchange={(e) => setSober(e.currentTarget.checked)} style="width:22px;height:22px;accent-color:var(--c-accent)" /> Mode sans alcool</label>
@@ -56,8 +57,8 @@
       {#each s.players as p (p.id)}
         <div class="row player" class:off={!p.connected}>
           <Avatar name={p.name} color={p.color} look={p.avatar} size={44} />
-          <strong>{p.name}{p.id === s.hostId ? ' 👑' : ''}</strong>
-          <span class="muted tot">{tot[p.id] ? `${tot[p.id].drunk} ${s.sober ? 'pts' : '🍺'} · ${tot[p.id].given} donnés` : ''}</span>
+          <strong>{p.name}{#if p.id === s.hostId} <Icon name="crown" />{/if}</strong>
+          <span class="muted tot">{tot[p.id] ? `${tot[p.id].drunk} ${s.sober ? 'pts' : 'gorgées'} · ${tot[p.id].given} donnés` : ''}</span>
         </div>
       {/each}
     </section>
@@ -67,8 +68,8 @@
     <section class="card stack">
       <h3>Jeux</h3>
       <div class="gl">{#each games as g}
-        {#if g.ready && session.isHost}<button class="btn primary" disabled={missing(g.id)} onclick={() => { startGame(g.id); go('/jeu') }}>{g.emoji} Lancer {g.name}{missing(g.id) ? ` (${modules[g.id].min} joueurs min.)` : ''}</button>
-        {:else}<span class="chip">{g.emoji} {g.name}{g.ready ? '' : ' · bientôt'}</span>{/if}
+        {#if g.ready && session.isHost}<button class="btn primary" disabled={missing(g.id)} onclick={() => { startGame(g.id); go('/jeu') }}><Icon name={g.icon} /> Lancer {g.name}{missing(g.id) ? ` (${modules[g.id].min} joueurs min.)` : ''}</button>
+        {:else}<span class="chip"><Icon name={g.icon} /> {g.name}{g.ready ? '' : ' · bientôt'}</span>{/if}
       {/each}</div>
       {#if session.toast}<span class="muted" role="alert">{session.toast}</span>{/if}
     </section>

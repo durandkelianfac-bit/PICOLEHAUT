@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import Avatar from '../../components/Avatar.svelte'
   import PlayingCard from '../../components/PlayingCard.svelte'
   import LaserPad from '../../components/LaserPad.svelte'
@@ -63,9 +64,9 @@
       {:else}<p class="muted">L’hôte lance la partie.</p>{/if}
     </section>
   {:else}
-    {#if g.rule}<div class="rule" role="status">📜 Règle de {player(g.rule.by)?.name} : <b>{g.rule.text}</b></div>{/if}
+    {#if g.rule}<div class="rule" role="status"><Icon name="scroll" /> Règle de {player(g.rule.by)?.name} : <b>{g.rule.text}</b></div>{/if}
     <div class="held">
-      {#each [['jack', 'Valet ❄️'], ['king', 'Roi 👑']] as [k, label]}
+      {#each [['jack', 'Valet'], ['king', 'Roi']] as [k, label]}
         {#if g.held[k as 'jack' | 'king']}
           {@const owner = g.held[k as 'jack' | 'king']!}
           <span class="chip big">{label} : {player(owner)?.name}</span>
@@ -148,10 +149,10 @@
           {#if mine || session.isHost}<button class="btn primary block" onclick={() => act({ type: 'next' })}>Terminé — joueur suivant</button>{/if}
         {/if}
 
-        {#if g.held.jack === me}<button class="btn block" onclick={() => act({ type: 'use', card: 'jack' })}>❄️ Jouer mon Valet (freeze)</button>{/if}
+        {#if g.held.jack === me}<button class="btn block" onclick={() => act({ type: 'use', card: 'jack' })}><Icon name="snow" /> Jouer mon Valet (freeze)</button>{/if}
         {#if g.held.king === me}
           <section class="card stack king">
-            <h3>👑 Tu es le roi</h3>
+            <h3><Icon name="crown" /> Tu es le roi</h3>
             <form class="row" onsubmit={(e) => { e.preventDefault(); act({ type: 'use', card: 'king', text: kingText }); kingText = '' }}>
               <input class="input" bind:value={kingText} placeholder="Ma règle de Roi…" aria-label="Règle du roi" /><button class="btn" disabled={!kingText.trim()}>Décréter</button></form>
             <strong>Offrir des {unit} (sans limite, quand tu veux)</strong>
@@ -162,7 +163,7 @@
               </select>
               <input class="input num" type="number" min="1" step="1" bind:value={decreeN} aria-label="Nombre de {unit}" />
             </div>
-            <button class="btn primary block" disabled={!decreeTo || !(decreeN >= 1)} onclick={() => act({ type: 'decree', to: decreeTo, n: Math.floor(decreeN) })}>🎁 Envoyer le cadeau royal</button>
+            <button class="btn primary block" disabled={!decreeTo || !(decreeN >= 1)} onclick={() => act({ type: 'decree', to: decreeTo, n: Math.floor(decreeN) })}><Icon name="gift" /> Envoyer le cadeau royal</button>
           </section>
         {/if}
       {:else}

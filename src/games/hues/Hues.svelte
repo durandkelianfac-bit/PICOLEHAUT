@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import { onMount } from 'svelte'
   import HuesBoard from './HuesBoard.svelte'
   import Avatar from '../../components/Avatar.svelte'
@@ -82,7 +83,7 @@
   {#if !isTable && isGiver && (g.phase === 'pick' || g.phase === 'clue1' || g.phase === 'clue2' || guessing)}
     <section class="card secret stack">
       {#if g.phase === 'pick' && priv?.options}
-        <strong>Choisis la couleur à faire deviner (secret 🤫)</strong>
+        <strong>Choisis la couleur à faire deviner (secret)</strong>
         <div class="opts">{#each priv.options as o, i}
           <button class="opt" style="background:{cellColor(o)}" onclick={() => gameAction({ type: 'pick', index: i })}><span>{cellLabel(o)}</span></button>
         {/each}</div>
@@ -118,8 +119,8 @@
         <section class="card stack pad">
           <strong>À toi ! {clueNo === 1 ? '1er' : '2e'} pion</strong>
           <div class="seg" role="radiogroup" aria-label="Mode de pointage">
-            <button role="radio" aria-checked={!touchMode} class:on={!touchMode} onclick={() => setTouch(false)}>🎯 Gyroscope</button>
-            <button role="radio" aria-checked={touchMode} class:on={touchMode} onclick={() => setTouch(true)}>👆 Tactile (correction)</button>
+            <button role="radio" aria-checked={!touchMode} class:on={!touchMode} onclick={() => setTouch(false)}><Icon name="target" /> Gyroscope</button>
+            <button role="radio" aria-checked={touchMode} class:on={touchMode} onclick={() => setTouch(true)}><Icon name="touch" /> Tactile (correction)</button>
           </div>
           {#if touchMode}
             <TouchPad playerId={me} label="Poser le pion" />
@@ -127,7 +128,7 @@
             <button class="btn primary block" onclick={() => enableLaser(me)}>Activer le pointeur laser</button>
             {#if laser.denied}<span class="muted">Permission refusée : autorise le capteur de mouvement dans les réglages du navigateur.</span>{/if}
           {:else}
-            <button class="btn block big-tap" onclick={laserClick}>🎯 Tape pour poser le pion</button>
+            <button class="btn block big-tap" onclick={laserClick}><Icon name="target" /> Tape pour poser le pion</button>
             <button class="btn block" onclick={recenter}>Recentrer</button>
           {/if}
         </section>
@@ -162,7 +163,7 @@
 
   {#if g.phase === 'end'}
     <section class="card stack end">
-      <h2>🏆 {g.winners.map((id) => player(id)?.name).join(' & ')}</h2>
+      <h2><Icon name="trophy" /> {g.winners.map((id) => player(id)?.name).join(' & ')}</h2>
       {#each sorted as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={34} /><span style="flex:1">{p.name}</span><strong>{g.totals[p.id] ?? 0} pts</strong></div>{/each}
       {#if session.isHost}<button class="btn primary block" onclick={stopGame}>Terminer la partie</button>{/if}
     </section>

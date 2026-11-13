@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from './Icon.svelte'
   import { onMount } from 'svelte'
   import { enableLaser, recenter, laserClick, laser } from '../lib/pointer.svelte'
   let { playerId, label = 'Tape pour désigner' }: { playerId: string; label?: string } = $props()
@@ -14,9 +15,9 @@
   {#if !laser.supported}<span class="muted" role="alert">Cet appareil n’a pas de capteur de mouvement.</span>{/if}
 {:else}
   <div class="status" class:ok={laser.events > 0} role="status">
-    {#if laser.events > 0}● Capteur actif — bouge le téléphone pour viser{:else if waiting}⚠ Aucun mouvement détecté : vérifie que le capteur est autorisé et que la page est en https{:else}… démarrage du capteur{/if}
+    {#if laser.events > 0}<Icon name="dot" /> Capteur actif — bouge le téléphone pour viser{:else if waiting}<Icon name="warn" /> Aucun mouvement détecté : vérifie que le capteur est autorisé et que la page est en https{:else}… démarrage du capteur{/if}
   </div>
-  <button class="btn block big" onclick={laserClick}>🎯 {label}</button>
+  <button class="btn block big" onclick={laserClick}><Icon name="target" /> {label}</button>
   <button class="btn block" onclick={recenter}>Recentrer</button>
 {/if}
 <style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../../components/Icon.svelte'
   import { onMount } from 'svelte'
   import Avatar from '../../components/Avatar.svelte'
   import LaserPad from '../../components/LaserPad.svelte'
@@ -56,7 +57,7 @@
         <section class="card stack {t}">
           <h3>Équipe {teamName(t as Team)}</h3>
           {#each members(t as Team) as p (p.id)}
-            <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span>{#if g.spies[t as Team] === p.id}<span class="chip">🕵️ espion</span>{/if}</div>
+            <div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={36} /><span style="flex:1">{p.name}</span>{#if g.spies[t as Team] === p.id}<span class="chip"><Icon name="codenames" /> espion</span>{/if}</div>
           {/each}
           {#if !isTable}
             {#if myTeam !== t}<button class="btn block" onclick={() => gameAction({ type: 'team', team: t })}>Rejoindre</button>
@@ -75,7 +76,7 @@
         <span class="pill blue" class:on={g.turn === 'blue' && g.phase !== 'end'}>Bleue · {g.remaining.blue}</span>
       </div>
       {#if g.phase === 'end'}
-        <div class="phase">🏆 Équipe {teamName(g.winner!)} gagne{g.reason === 'assassin' ? ' (assassin !)' : ''}</div>
+        <div class="phase"><Icon name="trophy" /> Équipe {teamName(g.winner!)} gagne{g.reason === 'assassin' ? ' (assassin !)' : ''}</div>
       {:else if g.clue}
         <div class="clue">Indice : <b>{clueText(g.clue)}</b> <span class="muted">· {g.guessesLeft >= UNLIMITED ? 'autant que vous voulez' : `${g.guessesLeft} essai${g.guessesLeft > 1 ? 's' : ''}`}</span></div>
       {:else}
@@ -90,7 +91,7 @@
         <button class="card-w {done ?? ''}" class:hint-red={hint === 'red'} class:hint-blue={hint === 'blue'} class:hint-neutral={hint === 'neutral'} class:hint-assassin={hint === 'assassin'}
           class:sel={selected === i} disabled={!canGuess || !!done || useLaser} onclick={() => (selected = i)}>
           <span>{w}</span>
-          {#if done === 'assassin'}<em>☠</em>{/if}
+          {#if done === 'assassin'}<em><Icon name="skull" /></em>{/if}
         </button>
       {/each}
     </div>

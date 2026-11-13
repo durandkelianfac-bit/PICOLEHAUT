@@ -54,7 +54,7 @@
       </section>
       {#if mine || (session.isHost && !isTable)}
         <div class="stack">
-          <button class="btn primary block big" onclick={() => act({ type: 'done' })}>{g.card.type === 'action' ? 'Action faite' : 'Fait ✔'}</button>
+          <button class="btn primary block big" onclick={() => act({ type: 'done' })}>{g.card.type === 'action' ? 'Action faite' : 'Fait'}</button>
           {#if g.card.type !== 'action'}<button class="btn block" onclick={() => act({ type: 'pass' })}>Je passe{g.card.sips ? ` (je bois ${g.card.sips})` : ''}</button>{/if}
         </div>
       {/if}

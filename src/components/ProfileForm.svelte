@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from './Icon.svelte'
   import Avatar from './Avatar.svelte'
   import { COLORS, type Profile } from '../lib/room.svelte'
   import { ACCESSORIES, LOOKS, composeAvatar, parseAvatar } from '../lib/looks'
@@ -49,7 +50,7 @@
     <div class="accs" role="radiogroup" aria-label="Accessoire">
       {#each ACCESSORIES as a}
         <button class="acc" class:sel={cur.acc === a.id} role="radio" aria-checked={cur.acc === a.id} onclick={() => (profile.avatar = composeAvatar(cur.look, a.id))}>
-          <span class="e" aria-hidden="true">{a.emoji}</span><span>{a.label}</span>
+          <span class="e" aria-hidden="true"><Icon name={a.icon} size="1.5em" /></span><span>{a.label}</span>
         </button>
       {/each}
     </div>
