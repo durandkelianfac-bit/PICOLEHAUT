@@ -4,11 +4,19 @@
   import { ACCESSORIES, LOOKS, composeAvatar, parseAvatar } from '../lib/looks'
   import { GENDERS } from '../lib/cheeky'
   let { profile = $bindable() }: { profile: Profile } = $props()
+  import HeroAvatar3D from './HeroAvatar3D.svelte'
+  let ready = $state(false)
   const cur = $derived(parseAvatar(profile.avatar))
 </script>
 <div class="stack">
   <div class="hero">
-    <Avatar name={profile.name} color={profile.color} look={profile.avatar} size={104} />
+    <!-- aperçu animé (un seul rendu 3D temps réel) ; la vignette fixe sert tant qu'il n'est pas prêt -->
+    <div class="live">
+      <div class="still" class:off={ready}><Avatar name={profile.name} color={profile.color} look={profile.avatar} size={104} /></div>
+      {#key profile.avatar + profile.color}
+        <div class="anim" class:on={ready}><HeroAvatar3D color={profile.color} look={profile.avatar} onready={() => (ready = true)} /></div>
+      {/key}
+    </div>
     <!-- Genre : sert à accorder les messages (Palmier pour l'instant). Genderfluid = tous les autres. -->
     <div class="gender" role="radiogroup" aria-label="Genre (accord des messages au Palmier)" title="Sert à accorder les messages du Palmier">
       {#each GENDERS as g}
@@ -49,6 +57,11 @@
 </div>
 <style>
   .hero { position: relative; display: flex; justify-content: center; padding: 6px 0; }
+  .live { position: relative; width: 136px; height: 170px; display: grid; place-items: center; }
+  .still, .anim { grid-area: 1 / 1; width: 100%; height: 100%; display: grid; place-items: center; }
+  .still.off { display: none; }
+  .anim { opacity: 0; transition: opacity .25s; }
+  .anim.on { opacity: 1; }
   .gender { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
   .gender button { padding: 3px 9px; border-radius: 99px; font-size: .68rem; color: var(--c-soft); background: var(--c-bg); box-shadow: var(--shadow-in); opacity: .8; }
   .gender button.sel { background: var(--c-accent); color: var(--c-on-accent); font-weight: 700; opacity: 1; }
