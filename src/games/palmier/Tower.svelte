@@ -23,7 +23,7 @@
 
   function spawn() {
     held = Matter.Bodies.rectangle(W / 2, towerTop() - 160, CW, CH, {
-      isStatic: true, friction: 0.8, frictionStatic: 1, restitution: 0, density: 0.002, chamfer: { radius: 4 },
+      isSensor: true, friction: 0.8, frictionStatic: 1, restitution: 0, density: 0.002, chamfer: { radius: 4 },
     })
     cards.push(held)
     Matter.Composite.add(engine.world, held)
@@ -42,23 +42,29 @@
   }
 
   // Quand c'est à un joueur de poser : on fait apparaître une carte.
+  // `active` doit être lu AVANT tout retour anticipé : sinon l'effet ne dépend de rien et ne se relance jamais
   $effect(() => {
-    if (!engine) return
-    if (active && !held) spawn()
+    const on = active
+    if (!engine || !on) return
+    if (!held) spawn()
   })
 
   onMount(() => {
     engine = Matter.Engine.create({ gravity: { x: 0, y: 1 }, positionIterations: 10, velocityIterations: 8 })
     platform = Matter.Bodies.rectangle(W / 2, PLAT_Y, PLAT_W, PLAT_H, { isStatic: true, friction: 1 })
     Matter.Composite.add(engine.world, platform)
+    // sonde de débogage pour les tests automatiques (jamais dans la version publiée)
+    if (import.meta.env.DEV) (window as unknown as { __tower: unknown }).__tower = { info: () => ({ cards: cards.length, held: !!held, released, active, reported, calm, speed: held?.speed, ang: held?.angularSpeed, y: held?.position.y, x: held?.position.x }) }
     const ctx2d = canvas.getContext('2d')!
     let raf = 0
     let last = performance.now()
 
     const offClick = onLaserClick((m) => {
       if (m.id === playerId && active && held && !released) {
-        Matter.Body.setStatic(held, false)
+        // la carte devient solide et tombe (setStatic(false) donnait des positions NaN avec Matter)
+        held.isSensor = false
         Matter.Body.setVelocity(held, { x: 0, y: 0 })
+        Matter.Body.setAngularVelocity(held, 0)
         released = true; releasedAt = performance.now(); calm = 0
       }
     })
@@ -72,6 +78,9 @@
         const angle = p ? (p.y - 0.5) * 1.6 : 0
         Matter.Body.setPosition(held, { x, y: towerTop() - 160 })
         Matter.Body.setAngle(held, angle)
+        // la gravité s'applique à chaque pas : on annule la vitesse pour que la carte reste là où on la tient
+        Matter.Body.setVelocity(held, { x: 0, y: 0 })
+        Matter.Body.setAngularVelocity(held, 0)
       }
       Matter.Engine.update(engine, dt)
 
@@ -80,9 +89,10 @@
         const fallen = cards.some((c) => c.position.y > platTop + 30)
         if (fallen) report('collapsed')
         else {
-          const still = held.speed < 0.12 && Math.abs(held.angularSpeed) < 0.01
+          // Matter garde une petite agitation sur un corps au repos : seuils tolérants
+          const still = held.speed < 0.35 && Math.abs(held.angularSpeed) < 0.03
           calm = still ? calm + 1 : 0
-          if (calm > 70 || t - releasedAt > 12000) report('placed')
+          if (calm > 45 || t - releasedAt > 7000) report('placed')
         }
       } else if (!released && !reported && cards.some((c) => c !== held && c.position.y > platTop + 30)) {
         report('collapsed')

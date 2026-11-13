@@ -7,7 +7,7 @@ const FOV_Y = 28
 const SMOOTH = 0.25 // lissage exponentiel (0 = figé, 1 = brut)
 const SEND_MS = 33 // ~30 Hz
 
-export const laser = $state({ active: false, supported: true, denied: false, x: 0.5, y: 0.5 })
+export const laser = $state({ active: false, supported: true, denied: false, x: 0.5, y: 0.5, events: 0, since: 0 })
 
 let yaw0: number | null = null
 let pitch0: number | null = null
@@ -20,6 +20,7 @@ const clamp = (v: number) => Math.max(0, Math.min(1, v))
 
 function onOrient(e: DeviceOrientationEvent) {
   if (e.alpha == null || e.beta == null) return
+  laser.events += 1
   raw = { yaw: e.alpha, pitch: e.beta }
   if (yaw0 === null || pitch0 === null) { yaw0 = raw.yaw; pitch0 = raw.pitch }
   // alpha augmente en tournant vers la gauche : on inverse pour que droite = x croissant
@@ -40,12 +41,17 @@ export async function enableLaser(playerId: string) {
   } catch { laser.denied = true; return }
   addEventListener('deviceorientation', onOrient)
   laser.active = true
-  recenter()
+  laser.events = 0
+  laser.since = Date.now()
+  // le point de départ est pris au premier événement du capteur (sinon le laser reste collé au bord)
+  yaw0 = pitch0 = null
+  laser.x = 0.5; laser.y = 0.5
   timer ??= setInterval(() => sendLaser({ id: myId, x: laser.x, y: laser.y }), SEND_MS)
 }
 
 export function recenter() {
-  yaw0 = raw.yaw; pitch0 = raw.pitch
+  // sans donnée du capteur, on attend la prochaine mesure plutôt que de figer un faux zéro
+  if (laser.events === 0) { yaw0 = pitch0 = null } else { yaw0 = raw.yaw; pitch0 = raw.pitch }
   laser.x = 0.5; laser.y = 0.5
 }
 
