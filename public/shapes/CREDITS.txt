@@ -1,0 +1,7 @@
+Images détourées utilisées dans « Guess the size » (Wikimedia Commons), recolorées en une couleur par le jeu.
+
+cd.png        — « Compact Disc.png », liamz2r, domaine public.
+                https://commons.wikimedia.org/wiki/File:Compact_Disc.png
+pingpong.png  — « Table tennis ball.png », photo de Dontworry, CC BY-SA 3.0.
+                https://commons.wikimedia.org/wiki/File:Table_tennis_ball.png
+                https://creativecommons.org/licenses/by-sa/3.0/

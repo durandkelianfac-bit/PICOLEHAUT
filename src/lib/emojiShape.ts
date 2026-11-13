@@ -29,3 +29,39 @@ async function draw(emoji: string): Promise<Shape> {
   o.getContext('2d')!.drawImage(c, x0, y0, w, h, 0, 0, w, h)
   return { url: o.toDataURL('image/png'), ar: w / h }
 }
+
+const isImage = (k: string) => /\.(png|webp|svg)$/i.test(k)
+
+/** Forme d'une image détourée (PNG à fond transparent), rognée au plus juste. */
+async function imageShape(url: string): Promise<Shape> {
+  const img = new Image()
+  img.src = url
+  await img.decode()
+  const N = 400
+  const sc = Math.min(1, N / Math.max(img.naturalWidth, img.naturalHeight))
+  const W = Math.max(1, Math.round(img.naturalWidth * sc)), H = Math.max(1, Math.round(img.naturalHeight * sc))
+  const c = document.createElement('canvas')
+  c.width = W; c.height = H
+  const x = c.getContext('2d', { willReadFrequently: true })!
+  x.drawImage(img, 0, 0, W, H)
+  return crop(c, x, W, H)
+}
+
+/** Forme d'un objet : image détourée si la clé est un fichier, sinon silhouette de l'emoji. */
+export function loadShape(key: string): Promise<Shape> {
+  let p = cache.get(key)
+  if (!p) { p = isImage(key) ? imageShape(key) : draw(key); cache.set(key, p) }
+  return p
+}
+
+function crop(c: HTMLCanvasElement, x: CanvasRenderingContext2D, W: number, H: number): Shape {
+  const d = x.getImageData(0, 0, W, H).data
+  let x0 = W, y0 = H, x1 = -1, y1 = -1
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) if (d[(y * W + xx) * 4 + 3] > 24) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y }
+  if (x1 < 0) return { url: c.toDataURL(), ar: W / H }
+  const w = x1 - x0 + 1, h = y1 - y0 + 1
+  const o = document.createElement('canvas')
+  o.width = w; o.height = h
+  o.getContext('2d')!.drawImage(c, x0, y0, w, h, 0, 0, w, h)
+  return { url: o.toDataURL('image/png'), ar: w / h }
+}

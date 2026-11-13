@@ -2,7 +2,8 @@
   import Avatar from '../../components/Avatar.svelte'
   import { session, gameAction, stopGame } from '../../lib/room.svelte'
   import { fmtSize, ratioToSlider, sliderToRatio } from './logic'
-  import { emojiShape, type Shape } from '../../lib/emojiShape'
+  import { loadShape, type Shape } from '../../lib/emojiShape'
+  import { shapeImage } from '../../config/shapes.guess'
   import type { GuessPub } from './module'
 
   let { view = 'phone' }: { view?: 'phone' | 'table' } = $props()
@@ -27,12 +28,14 @@
   const sceneMax = $derived(Math.max(refSize, guessSize, real ?? 0, ...Object.values(g.result?.guesses ?? {}).map((x) => x.size)))
   // formes (emojis rognés) : le bas de chaque objet est posé sur le trait gris, sa hauteur suit sa taille
   let shapes = $state<Record<string, Shape>>({})
+  // clé de forme : image détourée si l'objet en a une, sinon son emoji
+  const key = (o?: { name: string; emoji: string }) => (o ? shapeImage(o.name) ?? o.emoji : '')
   $effect(() => {
-    for (const e of [g.current?.ref.emoji, g.current?.target.emoji]) if (e && !shapes[e]) emojiShape(e).then((s) => (shapes[e] = s))
+    for (const e of [key(g.current?.ref), key(g.current?.target)]) if (e && !shapes[e]) loadShape(e).then((s) => (shapes[e] = s)).catch(() => {})
   })
   const ar = (e?: string) => (e ? shapes[e]?.ar ?? 1 : 1)
   // si un objet est très large, on réduit toute la scène pour qu'il ne déborde pas
-  const k = $derived(Math.min(1, 130 / (190 * Math.max(ar(g.current?.ref.emoji), ar(g.current?.target.emoji)))))
+  const k = $derived(Math.min(1, 130 / (190 * Math.max(ar(key(g.current?.ref)), ar(key(g.current?.target))))))
   const h = (size: number) => Math.max(3, (size / sceneMax) * 190 * k)
 </script>
 
@@ -69,14 +72,14 @@
       </defs>
       <line x1="10" y1="215" x2="310" y2="215" stroke="#CFDBD5" stroke-opacity=".4" />
       <!-- référence (bleu) -->
-      {@render shape(g.current.ref.emoji, 70, h(refSize), "sil-ref")}
+      {@render shape(key(g.current.ref), 70, h(refSize), "sil-ref")}
       <text x="70" y="233" text-anchor="middle" font-size="9" fill="#4f9dff">{g.current.ref.name.split(' (')[0]}</text>
       <text x="70" y="244" text-anchor="middle" font-size="9" fill="#E8EDDF">{fmtSize(refSize)}</text>
       <!-- cible (rouge) : c'est elle qui grandit -->
       {#if g.phase === 'guess'}
-        {@render shape(g.current.target.emoji, 230, h(guessSize), "sil-target")}
+        {@render shape(key(g.current.target), 230, h(guessSize), "sil-target")}
       {:else if g.result}
-        {@render shape(g.current.target.emoji, 230, h(g.result.real), "sil-target")}
+        {@render shape(key(g.current.target), 230, h(g.result.real), "sil-target")}
         {#each Object.entries(g.result.guesses) as [id, gs], i}
           <line x1="190" y1={215 - h(gs.size)} x2="270" y2={215 - h(gs.size)} stroke={player(id)?.color} stroke-width="3" stroke-dasharray="6 3" />
           <circle cx={278 + (i % 3) * 12} cy={215 - h(gs.size)} r="5" fill={player(id)?.color} />
