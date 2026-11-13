@@ -48,26 +48,28 @@
     <header><span class="chip">Manche {g.round + 1}/{g.total}</span>
       <h3>Quelle est la taille de : {g.current.target.emoji} <b>{g.current.target.name}</b> ?</h3></header>
 
-    <svg class="scene" viewBox="0 0 320 250" role="img" aria-label="Comparaison de tailles">
+    <svg class="scene" viewBox="0 0 320 250" role="img" aria-label="Comparaison de tailles : la référence en bleu, la cible en rouge">
+      <defs>
+        <!-- silhouette d'une seule couleur : on garde la forme de l'objet, on remplace sa couleur -->
+        <filter id="sil-ref" x="-5%" y="-5%" width="110%" height="110%"><feFlood flood-color="#4f9dff" /><feComposite in2="SourceAlpha" operator="in" /></filter>
+        <filter id="sil-target" x="-5%" y="-5%" width="110%" height="110%"><feFlood flood-color="#ff5a5a" /><feComposite in2="SourceAlpha" operator="in" /></filter>
+      </defs>
       <line x1="10" y1="215" x2="310" y2="215" stroke="#CFDBD5" stroke-opacity=".4" />
-      <!-- référence -->
-      <rect x="40" y={215 - h(refSize)} width="60" height={h(refSize)} rx="8" fill="#CFDBD5" />
-      <text x="70" y={215 - h(refSize) - 8} text-anchor="middle" font-size="22">{g.current.ref.emoji}</text>
-      <text x="70" y="233" text-anchor="middle" font-size="9" fill="#E8EDDF">{g.current.ref.name.split(' (')[0]}</text>
-      <text x="70" y="244" text-anchor="middle" font-size="9" fill="#F5CB5C">{fmtSize(refSize)}</text>
-      <!-- cible (taille réglée) -->
+      <!-- référence (bleu) -->
+      <text x="70" y={215 - h(refSize) * 0.08} text-anchor="middle" font-size={h(refSize)} filter="url(#sil-ref)">{g.current.ref.emoji}</text>
+      <text x="70" y="233" text-anchor="middle" font-size="9" fill="#4f9dff">{g.current.ref.name.split(' (')[0]}</text>
+      <text x="70" y="244" text-anchor="middle" font-size="9" fill="#E8EDDF">{fmtSize(refSize)}</text>
+      <!-- cible (rouge) : c'est elle qui grandit -->
       {#if g.phase === 'guess'}
-        <rect x="200" y={215 - h(guessSize)} width="60" height={h(guessSize)} rx="8" fill="#F5CB5C" />
-        <text x="230" y={215 - h(guessSize) - 8} text-anchor="middle" font-size="22">{g.current.target.emoji}</text>
+        <text x="230" y={215 - h(guessSize) * 0.08} text-anchor="middle" font-size={h(guessSize)} filter="url(#sil-target)">{g.current.target.emoji}</text>
       {:else if g.result}
-        <rect x="200" y={215 - h(g.result.real)} width="60" height={h(g.result.real)} rx="8" fill="#F5CB5C" />
-        <text x="230" y={215 - h(g.result.real) - 8} text-anchor="middle" font-size="22">{g.current.target.emoji}</text>
+        <text x="230" y={215 - h(g.result.real) * 0.08} text-anchor="middle" font-size={h(g.result.real)} filter="url(#sil-target)">{g.current.target.emoji}</text>
         {#each Object.entries(g.result.guesses) as [id, gs], i}
           <line x1="190" y1={215 - h(gs.size)} x2="270" y2={215 - h(gs.size)} stroke={player(id)?.color} stroke-width="3" stroke-dasharray="6 3" />
           <circle cx={278 + (i % 3) * 12} cy={215 - h(gs.size)} r="5" fill={player(id)?.color} />
         {/each}
-        <text x="230" y="233" text-anchor="middle" font-size="9" fill="#E8EDDF">Réel</text>
-        <text x="230" y="244" text-anchor="middle" font-size="9" fill="#F5CB5C">{fmtSize(g.result.real)}</text>
+        <text x="230" y="233" text-anchor="middle" font-size="9" fill="#ff5a5a">Réel</text>
+        <text x="230" y="244" text-anchor="middle" font-size="9" fill="#E8EDDF">{fmtSize(g.result.real)}</text>
       {/if}
     </svg>
 

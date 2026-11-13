@@ -1,6 +1,7 @@
 <script lang="ts">
   import { packsStore, updatePacks, newItem, newCategory, exportPacks, importPacks } from '../lib/packs.svelte'
   import { session } from '../lib/room.svelte'
+  import ClipMaker from '../components/ClipMaker.svelte'
 
   let gameId = $state('codenames')
   let newCat = $state('')
@@ -44,6 +45,7 @@
     <div class="card stack"><strong>Format d’un extrait</strong>
       <code>lien ou id YouTube | début (s) | fin (s) | titre | 1.5:Réplique avec ___ ## 6:Autre réplique</code>
       <span class="muted">Le nombre devant « : » est l’instant de la réplique (en secondes depuis le début de l’extrait). « ___ » est un trou que le joueur remplit. Extraits courts (10 à 30 s) recommandés.</span></div>
+    <ClipMaker />
   {:else if gameId === 'cyclone'}
     <div class="card stack"><strong>Format d’une carte</strong>
       <code>intensité (1 soft, 2 moyen, 3 épicé) | texte | gorgées</code>

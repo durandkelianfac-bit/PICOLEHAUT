@@ -2,6 +2,7 @@
   // Lecteur YouTube (IFrame API) d'un extrait [start, end], son d'origine coupé par défaut.
   // Pas de composant tiers : l'API officielle est chargée à la demande.
   import { onMount } from 'svelte'
+  import { loadYouTubeApi as loadApi } from '../lib/youtube'
 
   let { videoId, start, end, ontime, onend }: { videoId: string; start: number; end: number; ontime?: (t: number) => void; onend?: () => void } = $props()
 
@@ -11,20 +12,6 @@
   let failed = $state(false)
   let raf = 0
   let playing = false
-
-  let apiP: Promise<any> | undefined
-  function loadApi(): Promise<any> {
-    const w = window as any
-    if (w.YT?.Player) return Promise.resolve(w.YT)
-    apiP ??= new Promise((resolve, reject) => {
-      w.onYouTubeIframeAPIReady = () => resolve(w.YT)
-      const s = document.createElement('script')
-      s.src = 'https://www.youtube.com/iframe_api'
-      s.onerror = () => reject(new Error('YouTube indisponible'))
-      document.head.appendChild(s)
-    })
-    return apiP
-  }
 
   /** Joue l'extrait depuis le début. */
   export function play(muted = true) {
