@@ -5,6 +5,9 @@ const KEY = 'picole.pid'
 let current: string | null = null
 
 export const tabId = () => current
+let primary = true
+/** Vrai pour le premier onglet de l'appareil (il garde l'identifiant sauvegardé du profil). */
+export const isPrimaryTab = () => primary
 
 function fresh(): string {
   try { if (typeof crypto.randomUUID === 'function') return crypto.randomUUID() } catch { /* contexte non sécurisé */ }
@@ -30,5 +33,6 @@ export async function claimTabId(preferred: string): Promise<void> {
     setTimeout(() => resolve(false), 250)
   })
   if (taken) current = fresh()
+  primary = current === preferred
   try { if (current) sessionStorage.setItem(KEY, current) } catch { /* ignoré */ }
 }

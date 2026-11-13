@@ -6,7 +6,7 @@ import { pushHistory, type SipEvent } from './sips'
 import { modules } from '../games/registry'
 import { assignDistinct, assignLook } from './looks'
 import { clearAudio, putAudio, registerAudioSender } from './audio.svelte'
-import { tabId } from './identity'
+import { isPrimaryTab, tabId } from './identity'
 import type { Gender } from './cheeky'
 import { onLocalPacksChange, packsStore, replacePacks, type Packs } from './packs.svelte'
 
@@ -172,12 +172,24 @@ function deliverPriv(priv?: Record<string, unknown>) {
 // --- Session mémorisée dans l'onglet : un rechargement (volontaire ou non) ramène dans le salon ---
 interface Saved { code: string; host: boolean; asTable: boolean; alsoPlay: boolean }
 const SESSION_KEY = 'picole.session'
+// Copie durable (localStorage) : certains navigateurs mobiles vident la mémoire d'onglet quand ils le rechargent.
+// Elle ne sert qu'au premier onglet de l'appareil (jamais à un onglet de test) et seulement si elle est récente.
+const LAST_KEY = 'picole.lastsession'
+const LAST_TTL = 12 * 3600 * 1000
 function saveSession(s: Saved | null) {
   try { if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY) } catch { /* stockage indisponible */ }
+  try { if (s && isPrimaryTab()) localStorage.setItem(LAST_KEY, JSON.stringify({ ...s, at: Date.now() })); else if (!s && isPrimaryTab()) localStorage.removeItem(LAST_KEY) } catch { /* ignoré */ }
 }
 function savedSession(): Saved | null {
-  try { const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); return s && typeof s.code === 'string' ? s : null } catch { return null }
+  try { const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); if (s && typeof s.code === 'string') return s } catch { /* ignoré */ }
+  try {
+    const s = JSON.parse(localStorage.getItem(LAST_KEY) || 'null')
+    if (isPrimaryTab() && s && typeof s.code === 'string' && Date.now() - (s.at ?? 0) < LAST_TTL) return s
+  } catch { /* ignoré */ }
+  return null
 }
+let restoring = false // reconnexion automatique après un rechargement : on réessaie au lieu d'abandonner
+let retries = 0
 
 const GRACE_MS = 10000 // attente avant qu'un joueur reprenne le rôle d'hôte (laisse le temps à un rechargement)
 const RESUME_WAIT_MS = 5000 // un ex-hôte qui revient écoute d'abord si un autre hôte a pris le relais
@@ -292,6 +304,7 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
     hostPeerId = ctx.peerId
     const first = session.state === null
     session.state = s
+    restoring = false; retries = 0
     session.status = 'online'
     session.isHost = false
     replacePacks(s.packs)
@@ -307,13 +320,21 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
       resumeTimer = setTimeout(() => { resumeTimer = null; if (!session.state && !hosting) startHosting(initial, initialSecret) }, RESUME_WAIT_MS)
     } else startHosting(initial, initialSecret)
   }
+  const mine = room
   setTimeout(() => {
-    if (session.state) return
+    if (session.state || room !== mine) return
+    if (restoring && retries < 4) {
+      retries++
+      void mine?.leave()
+      room = null
+      connect(code, host, initial, asTable, alsoPlay, resuming, initialSecret)
+      return
+    }
     session.status = 'error'
     session.error = session.peers === 0
       ? 'Aucun appareil trouvé : vérifie le code, que l’hôte a bien ouvert son salon, et que vous êtes sur des navigateurs différents (ou un onglet privé).'
       : 'Appareil trouvé mais le salon ne répond pas : demande à l’hôte de rouvrir son salon.'
-  }, 20000)
+  }, restoring ? 12000 : 20000)
 }
 
 export function createRoom(profile: Profile, mode: RoomMode, sober: boolean) {
@@ -341,6 +362,7 @@ export function resumeRoom(code: string, asTable = false, alsoPlay = false): boo
 export function restoreSession(): { asTable: boolean } | null {
   const s = savedSession()
   if (!s || session.state || session.status !== 'idle') return null
+  restoring = true; retries = 0
   const ok = s.host ? resumeRoom(s.code, s.asTable, s.alsoPlay) : (connect(s.code, false, undefined, s.asTable, s.alsoPlay), true)
   return ok ? { asTable: s.asTable } : null
 }
@@ -374,6 +396,7 @@ export async function leaveRoom() {
   await room?.leave()
   room = null; sendState = null; sendIntent = null; sendBackup = null; hostPeerId = null
   saveSession(null)
+  restoring = false; retries = 0
   peerToPlayer.clear()
   session.state = null; session.status = 'idle'; session.isHost = false; session.priv = null; session.pointers = {}
   tablePeers.clear(); secret = null
