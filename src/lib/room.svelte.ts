@@ -91,11 +91,25 @@ let sendPriv: ((d: unknown, target: string) => Promise<void>) | null = null
 let sendPointer: ((m: PointerMsg) => Promise<void>) | null = null
 const tablePeers = new Set<string>() // hôte : appareils « écran table »
 let secret: unknown = null // hôte : état secret du jeu en cours
+interface Backup { state: RoomState; secret: unknown }
+let sendBackup: ((d: Backup, target: string) => Promise<void>) | null = null
 
 function commit(next: RoomState) {
   session.state = next
   save('picole.room.' + next.code, next)
+  save('picole.secret.' + next.code, $state.snapshot(secret))
   sendState?.($state.snapshot(next) as RoomState)
+  pushBackup(next)
+}
+
+/** Copie de la partie (état + secret) envoyée à un successeur : si l'hôte part, il prend le relais. */
+function pushBackup(s: RoomState) {
+  if (!sendBackup || !session.isHost) return
+  const peerOf = (pid: string) => [...peerToPlayer.entries()].find(([, v]) => v === pid)?.[0]
+  const cands = s.players.filter((p) => p.connected && p.id !== s.hostId && peerOf(p.id))
+  const pick = cands.find((p) => !tablePeers.has(peerOf(p.id)!)) ?? cands[0]
+  const peer = pick && peerOf(pick.id)
+  if (peer) sendBackup({ state: $state.snapshot(s) as RoomState, secret: $state.snapshot(secret) }, peer)
 }
 
 function applyIntent(i: Intent, peerId: string) {
@@ -155,10 +169,23 @@ function deliverPriv(priv?: Record<string, unknown>) {
   }
 }
 
-function connect(code: string, host: boolean, initial?: RoomState, asTable = false, alsoPlay = false) {
+// --- Session mémorisée dans l'onglet : un rechargement (volontaire ou non) ramène dans le salon ---
+interface Saved { code: string; host: boolean; asTable: boolean; alsoPlay: boolean }
+const SESSION_KEY = 'picole.session'
+function saveSession(s: Saved | null) {
+  try { if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY) } catch { /* stockage indisponible */ }
+}
+function savedSession(): Saved | null {
+  try { const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); return s && typeof s.code === 'string' ? s : null } catch { return null }
+}
+
+const GRACE_MS = 10000 // attente avant qu'un joueur reprenne le rôle d'hôte (laisse le temps à un rechargement)
+const RESUME_WAIT_MS = 5000 // un ex-hôte qui revient écoute d'abord si un autre hôte a pris le relais
+
+function connect(code: string, host: boolean, initial?: RoomState, asTable = false, alsoPlay = false, resuming = false, initialSecret: unknown = null) {
   const me = myProfile()
   session.me = me
-  session.isHost = host
+  session.isHost = false
   session.role = asTable ? 'table' : 'player'
   session.plays = asTable && alsoPlay
   session.priv = null
@@ -177,6 +204,7 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
   } catch (e) {
     session.status = 'error'; session.error = String(e); return
   }
+  saveSession({ code, host, asTable, alsoPlay })
   const countPeers = () => { session.peers = Object.keys(room?.getPeers() ?? {}).length }
   room.onPeerJoin(countPeers)
   room.onPeerLeave(countPeers)
@@ -187,8 +215,10 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
   sendIntent = (i, target) => intentAction.send(i, target ? { target } : undefined)
   const privAction = room.makeAction<any>('priv')
   const pointerAction = room.makeAction<PointerMsg>('pointer')
+  const backupAction = room.makeAction<Backup>('backup')
   sendPriv = (d, target) => privAction.send(d, { target })
   sendPointer = (m) => pointerAction.send(m)
+  sendBackup = (d, target) => backupAction.send(d, { target })
   privAction.onMessage((d) => {
     session.priv = { ...(session.priv ?? {}), ...d }
     if (d?.error) toast(d.error)
@@ -207,44 +237,83 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
     if (m.click) clickListeners.forEach((fn) => fn(m))
   })
 
-  if (host && initial) {
-    session.state = initial
+  let hosting = false
+  let backup: Backup | null = null // copie de l'état de l'hôte, reçue si on est son successeur
+  let takeover: ReturnType<typeof setTimeout> | null = null
+  let resumeTimer: ReturnType<typeof setTimeout> | null = null
+  const stopTimers = () => { if (takeover) clearTimeout(takeover); if (resumeTimer) clearTimeout(resumeTimer); takeover = resumeTimer = null }
+
+  /** Devient l'hôte : au départ (salon créé), à la reprise d'un salon, ou quand l'hôte a disparu. */
+  const startHosting = (st: RoomState, sec: unknown) => {
+    stopTimers()
+    hosting = true
+    session.isHost = true
     session.status = 'online'
-    onLocalPacksChange((p) => session.state && commit({ ...session.state, packs: p }))
-    room.onPeerJoin(() => { if (session.state) stateAction.send($state.snapshot(session.state) as RoomState) })
-    intentAction.onMessage((i, ctx) => applyIntent(i, ctx.peerId))
-    room.onPeerLeave(({ peerId }) => {
+    secret = sec
+    saveSession({ code, host: true, asTable, alsoPlay })
+    save('picole.lastHost', code)
+    commit(st)
+  }
+
+  onLocalPacksChange((p) => {
+    if (hosting) { if (session.state) commit({ ...session.state, packs: p }) }
+    else if (hostPeerId) sendIntent?.({ t: 'packs', packs: p }, hostPeerId)
+  })
+  intentAction.onMessage((i, ctx) => { if (hosting) applyIntent(i, ctx.peerId) })
+  room.onPeerJoin(() => { if (hosting && session.state) stateAction.send($state.snapshot(session.state) as RoomState) })
+  backupAction.onMessage((d) => { if (!hosting) backup = d })
+
+  room.onPeerLeave(({ peerId }) => {
+    if (hosting) {
       const pid = peerToPlayer.get(peerId)
       peerToPlayer.delete(peerId)
       const s = session.state
       if (pid && s) commit({ ...s, players: s.players.map((p) => (p.id === pid ? { ...p, connected: false } : p)) })
-    })
-  } else {
-    onLocalPacksChange((p) => hostPeerId && sendIntent?.({ t: 'packs', packs: p }, hostPeerId))
-    stateAction.onMessage((s, ctx) => {
-      if (host) return
-      hostPeerId = ctx.peerId
-      const first = session.state === null
-      session.state = s
-      session.status = 'online'
-      replacePacks(s.packs)
-      // (re)connexion : se présenter à l'hôte, aussi après une coupure
-      if (!s.game) session.priv = null
-      if (asTable && first) sendIntent?.({ t: 'join-table' }, ctx.peerId)
-      // un joueur normal, ou un écran central qui joue aussi, se présente à l'hôte (aussi après une coupure)
-      if ((!asTable || alsoPlay) && (first || !s.players.some((p) => p.id === me.id && p.connected))) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
-    })
-    room.onPeerLeave(({ peerId }) => {
-      if (peerId === hostPeerId) { session.status = 'connecting' }
-    })
-    setTimeout(() => {
-      if (session.state) return
-      session.status = 'error'
-      session.error = session.peers === 0
-        ? 'Aucun appareil trouvé : vérifie le code, que l’hôte a bien ouvert son salon, et que vous êtes sur des navigateurs différents (ou un onglet privé).'
-        : 'Appareil trouvé mais le salon ne répond pas : demande à l’hôte de rouvrir son salon.'
-    }, 20000)
+      return
+    }
+    if (peerId !== hostPeerId) return
+    session.status = 'connecting'
+    // l'hôte a disparu : son successeur (qui détient la copie de la partie) reprend la main s'il ne revient pas
+    if (backup && backup.state.code === code && !takeover) {
+      takeover = setTimeout(() => {
+        takeover = null
+        if (hosting || !backup) return
+        const b = backup
+        toast('L’hôte est parti : tu deviens l’hôte.')
+        startHosting({ ...b.state, hostId: me.id, players: b.state.players.map((p) => ({ ...p, connected: p.id === me.id })) }, b.secret)
+      }, GRACE_MS)
+    }
+  })
+
+  stateAction.onMessage((s, ctx) => {
+    if (hosting) return
+    stopTimers() // un hôte est là : pas de reprise, pas de doublon
+    const changed = ctx.peerId !== hostPeerId // premier contact, ou nouvel hôte : il faut se représenter
+    hostPeerId = ctx.peerId
+    const first = session.state === null
+    session.state = s
+    session.status = 'online'
+    session.isHost = false
+    replacePacks(s.packs)
+    if (!s.game) session.priv = null
+    if (asTable && (first || changed)) sendIntent?.({ t: 'join-table' }, ctx.peerId)
+    // un joueur normal, ou un écran central qui joue aussi, se présente à l'hôte (aussi après une coupure)
+    if ((!asTable || alsoPlay) && (first || changed || !s.players.some((p) => p.id === me.id && p.connected))) sendIntent?.({ t: 'join', profile: me }, ctx.peerId)
+  })
+
+  if (host && initial) {
+    if (resuming) {
+      // on revient : si un autre hôte a déjà pris le relais, on redevient simple joueur ; sinon on reprend le salon
+      resumeTimer = setTimeout(() => { resumeTimer = null; if (!session.state && !hosting) startHosting(initial, initialSecret) }, RESUME_WAIT_MS)
+    } else startHosting(initial, initialSecret)
   }
+  setTimeout(() => {
+    if (session.state) return
+    session.status = 'error'
+    session.error = session.peers === 0
+      ? 'Aucun appareil trouvé : vérifie le code, que l’hôte a bien ouvert son salon, et que vous êtes sur des navigateurs différents (ou un onglet privé).'
+      : 'Appareil trouvé mais le salon ne répond pas : demande à l’hôte de rouvrir son salon.'
+  }, 20000)
 }
 
 export function createRoom(profile: Profile, mode: RoomMode, sober: boolean) {
@@ -255,17 +324,25 @@ export function createRoom(profile: Profile, mode: RoomMode, sober: boolean) {
     players: [{ ...profile, connected: true }], history: [], game: null,
     packs: $state.snapshot(packsStore.packs) as Packs,
   }
-  save('picole.lastHost', code)
   connect(code, true, initial)
   return code
 }
 
 /** Reprise d'un salon hébergé (l'hôte a fermé l'onglet) depuis la sauvegarde locale. */
-export function resumeRoom(code: string): boolean {
+export function resumeRoom(code: string, asTable = false, alsoPlay = false): boolean {
   const saved = load<RoomState | null>('picole.room.' + code, null)
   if (!saved || saved.hostId !== myProfile().id) return false
-  connect(code, true, { ...saved, players: saved.players.map((p) => (p.id === saved.hostId ? p : { ...p, connected: false })) })
+  const sec = load<unknown>('picole.secret.' + code, null)
+  connect(code, true, { ...saved, players: saved.players.map((p) => (p.id === saved.hostId ? p : { ...p, connected: false })) }, asTable, alsoPlay, true, sec)
   return true
+}
+
+/** Au démarrage : retourne dans le salon quitté par un rechargement de la page. Renvoie la session reprise. */
+export function restoreSession(): { asTable: boolean } | null {
+  const s = savedSession()
+  if (!s || session.state || session.status !== 'idle') return null
+  const ok = s.host ? resumeRoom(s.code, s.asTable, s.alsoPlay) : (connect(s.code, false, undefined, s.asTable, s.alsoPlay), true)
+  return ok ? { asTable: s.asTable } : null
 }
 
 export function joinExisting(code: string, profile: Profile, asTable = false, alsoPlay = false) {
@@ -295,7 +372,8 @@ export function setSober(sober: boolean) {
 export async function leaveRoom() {
   onLocalPacksChange(null)
   await room?.leave()
-  room = null; sendState = null; sendIntent = null; hostPeerId = null
+  room = null; sendState = null; sendIntent = null; sendBackup = null; hostPeerId = null
+  saveSession(null)
   peerToPlayer.clear()
   session.state = null; session.status = 'idle'; session.isHost = false; session.priv = null; session.pointers = {}
   tablePeers.clear(); secret = null

@@ -2,6 +2,8 @@
   import { onMount } from 'svelte'
   import HuesBoard from './HuesBoard.svelte'
   import Avatar from '../../components/Avatar.svelte'
+  import TouchPad from '../../components/TouchPad.svelte'
+  import { load, save } from '../../lib/storage'
   import { session, gameAction, stopGame, onLaserClick } from '../../lib/room.svelte'
   import { enableLaser, recenter, laserClick, laser } from '../../lib/pointer.svelte'
   import { type Cell, cellColor, cellLabel } from './logic'
@@ -20,6 +22,9 @@
   const guessing = $derived(g.phase === 'guess1' || g.phase === 'guess2')
   const myTurn = $derived(guessing && currentGuesser === me)
   const useLaser = $derived(s.mode === 'table' && !isTable)
+  // correction : si le gyroscope de ce téléphone est capricieux, on passe au pavé tactile (choix mémorisé)
+  let touchMode = $state(load<boolean>('picole.hues.touch', false))
+  const setTouch = (v: boolean) => { touchMode = v; save('picole.hues.touch', v) }
   const priv = $derived(session.priv as { options?: Cell[]; target?: Cell } | null)
   const sorted = $derived([...s.players].sort((a, b) => (g.totals[b.id] ?? 0) - (g.totals[a.id] ?? 0)))
 
@@ -112,7 +117,13 @@
       {#if useLaser}
         <section class="card stack pad">
           <strong>À toi ! {clueNo === 1 ? '1er' : '2e'} pion</strong>
-          {#if !laser.active}
+          <div class="seg" role="radiogroup" aria-label="Mode de pointage">
+            <button role="radio" aria-checked={!touchMode} class:on={!touchMode} onclick={() => setTouch(false)}>🎯 Gyroscope</button>
+            <button role="radio" aria-checked={touchMode} class:on={touchMode} onclick={() => setTouch(true)}>👆 Tactile (correction)</button>
+          </div>
+          {#if touchMode}
+            <TouchPad playerId={me} label="Poser le pion" />
+          {:else if !laser.active}
             <button class="btn primary block" onclick={() => enableLaser(me)}>Activer le pointeur laser</button>
             {#if laser.denied}<span class="muted">Permission refusée : autorise le capteur de mouvement dans les réglages du navigateur.</span>{/if}
           {:else}
@@ -175,6 +186,9 @@
   .boardbox { position: relative; }
   .boardbox.scroll { overflow: auto; padding: 4px 0 8px; border-radius: 12px; -webkit-overflow-scrolling: touch; }
   .pad { position: sticky; bottom: calc(var(--nav-h) + 8px); z-index: 5; }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; padding: 8px 6px; border-radius: 99px; font-size: .78rem; color: var(--c-soft); background: var(--c-bg); box-shadow: var(--shadow-in); }
+  .seg button.on { background: var(--c-accent); color: var(--c-on-accent); font-weight: 700; }
   .big-tap { min-height: 96px; font-size: 1.2rem; }
   .laser { position: fixed; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px rgb(255 255 255 / .35), 0 0 18px 6px var(--c); pointer-events: none; z-index: 50; transition: left .05s linear, top .05s linear; }
   .laser span { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); font-size: .7rem; font-weight: 700; background: rgb(36 36 35 / .8); padding: 1px 6px; border-radius: 99px; white-space: nowrap; }

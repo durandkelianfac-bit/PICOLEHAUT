@@ -2,12 +2,14 @@
   import QRCode from 'qrcode'
   import Avatar from '../components/Avatar.svelte'
   import Chase from '../components/Chase.svelte'
-  import { session, leaveRoom, reportSips, setSober, resumeRoom, startGame } from '../lib/room.svelte'
-  import { drink, give, formatEvent, totals } from '../lib/sips'
-  import { sipsConfig } from '../config/sips.config'
+  import { session, leaveRoom, setSober, resumeRoom, startGame } from '../lib/room.svelte'
+  import { formatEvent, totals } from '../lib/sips'
   import { games } from '../config/games'
   import { go } from '../lib/router.svelte'
   import { load } from '../lib/storage'
+  import { modules } from '../games/registry'
+  const online = $derived(s ? s.players.filter((p) => p.connected).length : 0)
+  const missing = (id: string) => online < (modules[id]?.min ?? 1)
 
   const s = $derived(session.state)
   const name = (id: string) => s?.players.find((p) => p.id === id)?.name ?? '?'
@@ -18,14 +20,6 @@
     if (joinUrl) QRCode.toDataURL(joinUrl, { margin: 1, width: 280, color: { dark: '#242423', light: '#E8EDDF' } }).then((u) => (qr = u)).catch(() => (qr = ''))
   })
 
-  // Démo du moteur de gorgées (sera appelé par les jeux).
-  function demo() {
-    if (!s) return
-    const me = session.me!.id
-    const other = s.players.find((p) => p.id !== me)?.id ?? me
-    reportSips(give(me, sipsConfig.doublage.funniestGives, 'demo', 'Test du moteur'))
-    reportSips(drink(other, 2, 'demo', 'Test du moteur'))
-  }
   async function quit() { await leaveRoom(); go('/') }
   const lastHost = load<string>('picole.lastHost', '')
 </script>
@@ -73,11 +67,10 @@
     <section class="card stack">
       <h3>Jeux</h3>
       <div class="gl">{#each games as g}
-        {#if g.ready && session.isHost}<button class="btn primary" onclick={() => { startGame(g.id); go('/jeu') }}>{g.emoji} Lancer {g.name}</button>
+        {#if g.ready && session.isHost}<button class="btn primary" disabled={missing(g.id)} onclick={() => { startGame(g.id); go('/jeu') }}>{g.emoji} Lancer {g.name}{missing(g.id) ? ` (${modules[g.id].min} joueurs min.)` : ''}</button>
         {:else}<span class="chip">{g.emoji} {g.name}{g.ready ? '' : ' · bientôt'}</span>{/if}
       {/each}</div>
       {#if session.toast}<span class="muted" role="alert">{session.toast}</span>{/if}
-      <button class="btn block" onclick={demo}>Tester le moteur de gorgées</button>
     </section>
 
     <section class="card stack">
