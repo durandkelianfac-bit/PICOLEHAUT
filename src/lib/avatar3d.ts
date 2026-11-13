@@ -82,7 +82,7 @@ function makeAccessory(THREE: Three, acc: string, color: string) {
 }
 
 /** Instancie le robot : couleur du joueur sur le matériau « Main », expression, pose et accessoire. */
-export async function buildAvatar(avatar: string, color: string) {
+export async function buildAvatar(avatar: string, color: string, poseOverride?: string) {
   const { THREE, gltf, clone } = await loadAvatarKit()
   const parsed = parseAvatar(avatar)
   const look = lookById(parsed.look)!
@@ -109,7 +109,7 @@ export async function buildAvatar(avatar: string, color: string) {
   const accessory = headBone ? makeAccessory(THREE, parsed.acc, color) : null
   if (accessory) (headBone as unknown as import('three').Object3D).add(accessory)
   const mixer = new THREE.AnimationMixer(model)
-  const clip = gltf.animations.find((a) => a.name === look.pose) ?? gltf.animations.find((a) => a.name === 'Idle')
+  const clip = gltf.animations.find((a) => a.name === (poseOverride ?? look.pose)) ?? gltf.animations.find((a) => a.name === 'Idle')
   if (clip) mixer.clipAction(clip).play()
   return { THREE, model, mixer, look }
 }

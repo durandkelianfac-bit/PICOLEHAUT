@@ -2,6 +2,7 @@
   import Avatar from '../../components/Avatar.svelte'
   import { session, gameAction, stopGame } from '../../lib/room.svelte'
   import { fmtSize, ratioToSlider, sliderToRatio } from './logic'
+  import { emojiShape, type Shape } from '../../lib/emojiShape'
   import type { GuessPub } from './module'
 
   let { view = 'phone' }: { view?: 'phone' | 'table' } = $props()
@@ -24,8 +25,20 @@
   const guessSize = $derived(refSize * ratio)
   const real = $derived(g.result?.real ?? null)
   const sceneMax = $derived(Math.max(refSize, guessSize, real ?? 0, ...Object.values(g.result?.guesses ?? {}).map((x) => x.size)))
-  const h = (size: number) => Math.max(3, (size / sceneMax) * 190)
+  // formes (emojis rognés) : le bas de chaque objet est posé sur le trait gris, sa hauteur suit sa taille
+  let shapes = $state<Record<string, Shape>>({})
+  $effect(() => {
+    for (const e of [g.current?.ref.emoji, g.current?.target.emoji]) if (e && !shapes[e]) emojiShape(e).then((s) => (shapes[e] = s))
+  })
+  const ar = (e?: string) => (e ? shapes[e]?.ar ?? 1 : 1)
+  // si un objet est très large, on réduit toute la scène pour qu'il ne déborde pas
+  const k = $derived(Math.min(1, 130 / (190 * Math.max(ar(g.current?.ref.emoji), ar(g.current?.target.emoji)))))
+  const h = (size: number) => Math.max(3, (size / sceneMax) * 190 * k)
 </script>
+
+{#snippet shape(e: string, cx: number, ht: number, f: string)}
+  {#if shapes[e]}<image href={shapes[e].url} x={cx - (ht * shapes[e].ar) / 2} y={215 - ht} width={ht * shapes[e].ar} height={ht} filter="url(#{f})" />{/if}
+{/snippet}
 
 <div class="game" class:table={isTable}>
   {#if g.phase === 'setup'}
@@ -56,14 +69,14 @@
       </defs>
       <line x1="10" y1="215" x2="310" y2="215" stroke="#CFDBD5" stroke-opacity=".4" />
       <!-- référence (bleu) -->
-      <text x="70" y={215 - h(refSize) * 0.08} text-anchor="middle" font-size={h(refSize)} filter="url(#sil-ref)">{g.current.ref.emoji}</text>
+      {@render shape(g.current.ref.emoji, 70, h(refSize), "sil-ref")}
       <text x="70" y="233" text-anchor="middle" font-size="9" fill="#4f9dff">{g.current.ref.name.split(' (')[0]}</text>
       <text x="70" y="244" text-anchor="middle" font-size="9" fill="#E8EDDF">{fmtSize(refSize)}</text>
       <!-- cible (rouge) : c'est elle qui grandit -->
       {#if g.phase === 'guess'}
-        <text x="230" y={215 - h(guessSize) * 0.08} text-anchor="middle" font-size={h(guessSize)} filter="url(#sil-target)">{g.current.target.emoji}</text>
+        {@render shape(g.current.target.emoji, 230, h(guessSize), "sil-target")}
       {:else if g.result}
-        <text x="230" y={215 - h(g.result.real) * 0.08} text-anchor="middle" font-size={h(g.result.real)} filter="url(#sil-target)">{g.current.target.emoji}</text>
+        {@render shape(g.current.target.emoji, 230, h(g.result.real), "sil-target")}
         {#each Object.entries(g.result.guesses) as [id, gs], i}
           <line x1="190" y1={215 - h(gs.size)} x2="270" y2={215 - h(gs.size)} stroke={player(id)?.color} stroke-width="3" stroke-dasharray="6 3" />
           <circle cx={278 + (i % 3) * 12} cy={215 - h(gs.size)} r="5" fill={player(id)?.color} />
