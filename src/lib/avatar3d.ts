@@ -90,6 +90,8 @@ export async function buildAvatar(avatar: string, color: string) {
   model.traverse((o) => {
     const mesh = o as import('three').Mesh
     if (!mesh.isMesh) return
+    // la boîte englobante d'un maillage animé est celle de la pose d'origine : sans ça, le personnage est écarté à tort
+    mesh.frustumCulled = false
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
     const clones = mats.map((m) => {
       const c = m.clone() as import('three').MeshStandardMaterial
@@ -154,7 +156,7 @@ async function render(lookId: string, color: string, px: number): Promise<string
   const sun = new THREE.DirectionalLight(0xffffff, 2.4)
   sun.position.set(2, 4, 5)
   scene.add(sun)
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100)
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 2000)
   mixer.setTime(look.time)
   model.updateMatrixWorld(true)
   frame(THREE, camera, model, true)

@@ -23,7 +23,7 @@
         const sun = new THREE.DirectionalLight(0xffffff, 2.6)
         sun.position.set(2, 4, 5)
         scene.add(sun)
-        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100)
+        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 2000)
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
         const resize = () => {
           const w = canvas.clientWidth, h = canvas.clientHeight
@@ -33,6 +33,7 @@
           camera.updateProjectionMatrix()
           kit.frame(THREE, camera, model, false)
         }
+        mixer.setTime(0.5); model.updateMatrixWorld(true) // pose de référence pour le cadrage
         resize()
         addEventListener('resize', resize)
         const timer = new THREE.Timer()
