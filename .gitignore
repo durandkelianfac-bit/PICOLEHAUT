@@ -3,3 +3,7 @@ dist
 .env
 .env.*
 .certs
+
+# Documents de référence (droits d’auteur tiers) et réglages locaux : jamais publiés
+docs/
+.claude/
