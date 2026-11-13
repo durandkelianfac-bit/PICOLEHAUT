@@ -62,12 +62,12 @@
   .hero { display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
   .menu { display: flex; gap: 22px; justify-content: center; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--c-soft); }
   .menu a:hover { color: var(--c-accent); }
-  .stage { position: relative; display: grid; place-items: center; min-height: 340px; margin-top: 8px; }
-  .title { position: absolute; z-index: 1; text-align: center; font-size: clamp(3.4rem, 22vw, 6.6rem); display: flex; flex-direction: column; color: var(--c-text); }
+  .stage { position: relative; display: grid; place-items: center; min-height: 410px; margin-top: 8px; align-items: end; }
+  .title { position: absolute; top: 0; left: 0; right: 0; z-index: 1; text-align: center; font-size: clamp(3.4rem, 22vw, 6.6rem); display: flex; flex-direction: column; color: var(--c-text); }
   .title span:last-child { color: var(--c-accent); }
-  .avatar { grid-area: 1 / 1; position: relative; z-index: 2; width: 62%; max-width: 250px; margin-top: 70px; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); transition: transform .12s linear; }
+  .avatar { grid-area: 1 / 1; position: relative; z-index: 2; width: 40%; max-width: 170px; margin-top: 0; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); transition: transform .12s linear; }
   .avatar.off { display: none; }
-  .avatar3d { position: relative; z-index: 2; width: 70%; max-width: 300px; aspect-ratio: 4 / 5; margin-top: 50px; grid-area: 1 / 1; opacity: 0; transition: opacity .4s; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); }
+  .avatar3d { position: relative; z-index: 2; width: 58%; max-width: 230px; aspect-ratio: 4 / 5; margin-top: 0; grid-area: 1 / 1; opacity: 0; transition: opacity .4s; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); }
   .avatar3d.on { opacity: 1; }
   .lead { text-align: center; margin: 0; }
 </style>
