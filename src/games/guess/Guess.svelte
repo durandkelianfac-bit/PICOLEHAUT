@@ -37,7 +37,7 @@
   // la taille d'un objet est sa hauteur, ou sa largeur pour les objets « longueur » (avions, court, piscine…)
   const wide = (o?: { name: string }) => !!o && shapeDim(o.name) === 'w'
   // si un objet est très large, on réduit toute la scène pour qu'il ne déborde pas
-  const fit = (o?: { name: string }) => { const r = ar(key(o)); const wd = wide(o); return Math.min(1, 130 / (190 * (wd ? 1 : r)), wd ? r : 1) }
+  const fit = (o?: { name: string; emoji: string }) => { const r = ar(key(o)); const wd = wide(o); return Math.min(1, 130 / (190 * (wd ? 1 : r)), wd ? r : 1) }
   const k = $derived(Math.min(fit(g.current?.ref), fit(g.current?.target)))
   const h = (size: number) => Math.max(3, (size / sceneMax) * 190 * k)
 </script>
