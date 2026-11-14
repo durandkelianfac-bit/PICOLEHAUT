@@ -22,6 +22,7 @@ export interface RoomState {
   history: SipEvent[]
   packs: Packs
   game: { id: string; data: any } | null
+  epoch?: number // « ère » de l'hôte : +1 à chaque reprise ; en cas de deux hôtes, la plus récente l'emporte
 }
 type Intent =
   | { t: 'join'; profile: Profile }
@@ -191,7 +192,7 @@ function savedSession(): Saved | null {
 let restoring = false // reconnexion automatique après un rechargement : on réessaie au lieu d'abandonner
 let retries = 0
 
-const GRACE_MS = 10000 // attente avant qu'un joueur reprenne le rôle d'hôte (laisse le temps à un rechargement)
+const GRACE_MS = 20000 // attente avant qu'un joueur reprenne le rôle d'hôte (laisse le temps à un rechargement)
 const RESUME_WAIT_MS = 5000 // un ex-hôte qui revient écoute d'abord si un autre hôte a pris le relais
 
 function connect(code: string, host: boolean, initial?: RoomState, asTable = false, alsoPlay = false, resuming = false, initialSecret: unknown = null) {
@@ -292,13 +293,23 @@ function connect(code: string, host: boolean, initial?: RoomState, asTable = fal
         if (hosting || !backup) return
         const b = backup
         toast('L’hôte est parti : tu deviens l’hôte.')
-        startHosting({ ...b.state, hostId: me.id, players: b.state.players.map((p) => ({ ...p, connected: p.id === me.id })) }, b.secret)
+        startHosting({ ...b.state, epoch: (b.state.epoch ?? 0) + 1, hostId: me.id, players: b.state.players.map((p) => ({ ...p, connected: p.id === me.id })) }, b.secret)
       }, GRACE_MS)
     }
   })
 
   stateAction.onMessage((s, ctx) => {
-    if (hosting) return
+    // deux hôtes en même temps (ex. l'ancien revient après une reprise) : l'ère la plus récente gagne, à égalité l'identifiant le plus petit.
+    // Sans ça, les joueurs basculent sans cesse d'un état à l'autre.
+    const cur = session.state
+    const ce = cur?.epoch ?? 0, ep = s.epoch ?? 0
+    if (hosting) {
+      if (s.hostId === me.id || !(ep > ce || (ep === ce && s.hostId < (cur?.hostId ?? me.id)))) return
+      hosting = false
+      session.isHost = false
+      secret = null
+      toast('Un autre hôte a repris le salon.')
+    } else if (cur && (ep < ce || (ep === ce && s.hostId !== cur.hostId && s.hostId > cur.hostId))) return
     stopTimers() // un hôte est là : pas de reprise, pas de doublon
     const changed = ctx.peerId !== hostPeerId // premier contact, ou nouvel hôte : il faut se représenter
     hostPeerId = ctx.peerId
