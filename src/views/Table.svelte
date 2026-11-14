@@ -12,7 +12,9 @@
   import PlayerPanel from '../components/PlayerPanel.svelte'
   // l'écran central qui joue aussi : son jeu privé (rôle, main…) s'ouvre à la demande, jamais affiché en permanence
   let privateOpen = $state(false)
-  import { session } from '../lib/room.svelte'
+  import { session, leaveRoom } from '../lib/room.svelte'
+  import { go } from '../lib/router.svelte'
+  async function quit() { if (!confirm('Quitter le salon sur cet écran ?')) return; await leaveRoom(); go('/') }
   const s = $derived(session.state)
   const joinUrl = $derived(s ? `${location.origin}${location.pathname}#/rejoindre?code=${s.code}` : '')
   let qr = $state('')
@@ -20,7 +22,10 @@
 </script>
 <main class="tablepage">
   {#if !s}
-    <p class="muted">Connexion au salon…</p>
+    <div class="stack" style="max-width:520px">
+      <h2>{session.status === 'error' ? 'Connexion perdue' : 'Connexion au salon…'}</h2>
+      <p class="muted">{session.status === 'error' ? session.error : 'Un instant, ça peut prendre quelques secondes.'}</p>
+    </div>
   {:else if s.game?.id === 'hues'}
     <Hues view="table" />
   {:else if s.game?.id === 'codenames'}
@@ -41,6 +46,7 @@
       <div class="stack">{#each s.players as p}<div class="row"><Avatar name={p.name} color={p.color} look={p.avatar} size={56} /><strong style="font-size:1.4rem">{p.name}</strong></div>{/each}</div>
     </div>
   {/if}
+  <button class="btn leave" onclick={quit}><Icon name="close" /> Quitter</button>
   {#if session.plays && s?.game}
     <button class="btn primary mine" onclick={() => (privateOpen = true)}><Icon name="hide" /> Mon jeu</button>
     {#if privateOpen}
@@ -55,6 +61,7 @@
   {/if}
 </main>
 <style>
+  .leave { position: fixed; left: 20px; bottom: 20px; z-index: 40; opacity: .75; }
   .mine { position: fixed; right: 20px; bottom: 20px; z-index: 40; }
   .veil { position: fixed; inset: 0; z-index: 80; background: rgb(20 20 19 / .94); overflow: auto; display: grid; place-items: start center; padding: 24px; }
   .sheet { width: min(520px, 100%); display: flex; flex-direction: column; gap: 14px; }
